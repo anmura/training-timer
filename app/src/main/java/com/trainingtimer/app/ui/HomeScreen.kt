@@ -10,6 +10,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -254,7 +256,7 @@ private fun ComplexCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val icons = complex.exerciseIds().distinct().mapNotNull { exById[it]?.icon }.take(5)
+    val icons = complex.exerciseIds().distinct().mapNotNull { exById[it]?.icon }
     Column(
         Modifier
             .fillMaxWidth()
@@ -287,8 +289,25 @@ private fun ComplexCard(
             Modifier.padding(end = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                for (icon in icons) ExerciseIcon(icon, tileSize = 34.dp, iconSize = 20.dp, corner = 10.dp)
+            // Show only as many icons as fit, with a "+N" tile for the rest, and keep a gap before Start.
+            BoxWithConstraints(Modifier.weight(1f).padding(end = 12.dp)) {
+                val slots = ((maxWidth + 6.dp) / 40.dp).toInt().coerceAtLeast(1)
+                val shown = if (icons.size <= slots) icons else icons.take(slots - 1)
+                val hidden = icons.size - shown.size
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    for (icon in shown) ExerciseIcon(icon, tileSize = 34.dp, iconSize = 20.dp, corner = 10.dp)
+                    if (hidden > 0) {
+                        Box(
+                            Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(C.Surface2),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("+$hidden", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = C.Muted, maxLines = 1)
+                        }
+                    }
+                }
             }
             BigButton(
                 text = "Start",
