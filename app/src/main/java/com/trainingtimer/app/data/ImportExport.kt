@@ -218,6 +218,19 @@ object ImportExport {
         return arr
     }
 
+    /** Only the given complexes, with the exercises and categories they use. */
+    fun exportComplexes(d: AppData, selected: List<Complex>): String {
+        val used = selected.flatMap { it.exerciseIds() }.toSet()
+        val exercises = d.exercises.filter { it.id in used }
+        val catIds = exercises.flatMap { it.categories }.toSet()
+        val part = d.copy(
+            exercises = exercises,
+            complexes = selected,
+            categories = d.categories.filter { it.id in catIds },
+        )
+        return exportBackup(part)
+    }
+
     fun exportBackup(d: AppData): String {
         val byId = d.exercises.associateBy { it.id }
         val complexes = JSONArray()

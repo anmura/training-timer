@@ -90,6 +90,48 @@ fun ImportExportSheet(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ComplexImportExportSheet(
+    complexCount: Int,
+    onDismiss: () -> Unit,
+    onImport: () -> Unit,
+    onExportAll: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = C.Surface) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("Import & export", fontFamily = Condensed, fontSize = 30.sp, color = C.Text)
+            SheetOption(
+                title = "Import complexes",
+                subtitle = "From a .json file, with their exercises",
+                icon = UiIcons.DOWNLOAD,
+                highlighted = true,
+                onClick = onImport,
+            )
+            if (complexCount > 0) {
+                SheetOption(
+                    title = "Export all complexes",
+                    subtitle = if (complexCount == 1) "1 complex with its exercises" else "$complexCount complexes with their exercises",
+                    icon = UiIcons.UPLOAD,
+                    onClick = onExportAll,
+                )
+            }
+            Text(
+                "To export one complex, use ⋮ on its card. On import, exercises you already have are reused and complexes with an existing name are skipped.",
+                fontSize = 13.sp,
+                color = C.Muted,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
+    }
+}
+
 @Composable
 private fun SheetOption(title: String, subtitle: String, icon: String, onClick: () -> Unit, highlighted: Boolean = false) {
     val bg = if (highlighted) C.Lime else C.Surface2
@@ -174,11 +216,12 @@ private fun ImportSummary(outcome: ImportOutcome.Done) {
         val n = r.addedExercises.size
         val loaded = buildString {
             append("Successfully loaded ")
-            append(if (n == 1) "1 exercise" else "$n exercises")
+            val parts = ArrayList<String>()
             if (r.addedComplexes.isNotEmpty()) {
-                append(" and ")
-                append(if (r.addedComplexes.size == 1) "1 complex" else "${r.addedComplexes.size} complexes")
+                parts += if (r.addedComplexes.size == 1) "1 complex" else "${r.addedComplexes.size} complexes"
             }
+            if (n > 0 || r.addedComplexes.isEmpty()) parts += if (n == 1) "1 exercise" else "$n exercises"
+            append(parts.joinToString(" and "))
             if (outcome.fileName != null) append(" from ${outcome.fileName}")
             append(".")
         }
@@ -188,7 +231,11 @@ private fun ImportSummary(outcome: ImportOutcome.Done) {
             SummaryBlock(
                 icon = UiIcons.SKIPPED,
                 iconColor = C.Orange,
-                title = "Skipped ${r.skippedExercises.size} — already in your library",
+                title = if (r.addedComplexes.isNotEmpty()) {
+                    "${r.skippedExercises.size} already in your library — reused"
+                } else {
+                    "Skipped ${r.skippedExercises.size} — already in your library"
+                },
             ) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     for (name in r.skippedExercises) Chip(name)

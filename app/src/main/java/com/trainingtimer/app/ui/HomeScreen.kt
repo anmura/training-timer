@@ -78,6 +78,7 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     var showSheet by remember { mutableStateOf(false) }
+    var showComplexSheet by remember { mutableStateOf(false) }
     var outcome by remember { mutableStateOf<ImportOutcome?>(null) }
     var pendingExport by remember { mutableStateOf<String?>(null) }
 
@@ -129,13 +130,38 @@ fun HomeScreen(
                 .fillMaxSize(),
         ) {
             if (tab == 0) {
-                ComplexesTab(data, onStart, onEditComplex, onSettings)
+                ComplexesTab(
+                    data,
+                    onStart,
+                    onEditComplex,
+                    onSettings,
+                    onImportExport = { showComplexSheet = true },
+                    onExport = { c ->
+                        pendingExport = ImportExport.exportComplexes(Repo.state.value, listOf(c))
+                        exportLauncher.launch(fileNameFor(c.name))
+                    },
+                )
             } else {
                 ExercisesTab(data, onEditExercise, onImportExport = { showSheet = true })
             }
         }
     }
 
+    if (showComplexSheet) {
+        ComplexImportExportSheet(
+            complexCount = data.complexes.size,
+            onDismiss = { showComplexSheet = false },
+            onImport = {
+                showComplexSheet = false
+                importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream", "*/*"))
+            },
+            onExportAll = {
+                showComplexSheet = false
+                pendingExport = ImportExport.exportComplexes(Repo.state.value, Repo.state.value.complexes)
+                exportLauncher.launch("training_complexes.json")
+            },
+        )
+    }
     if (showSheet) {
         ImportExportSheet(
             exerciseCount = data.exercises.size,
@@ -157,6 +183,12 @@ fun HomeScreen(
         )
     }
     outcome?.let { ImportResultDialog(it, onDismiss = { outcome = null }) }
+}
+
+/** A safe file name from a complex name, e.g. "Зарядка" -> "Зарядка.json". */
+private fun fileNameFor(name: String): String {
+    val clean = name.replace(Regex("[\\\\/:*?\"<>|]"), " ").trim().ifEmpty { "complex" }
+    return "$clean.json"
 }
 
 private fun runImport(context: Context, uri: Uri): ImportOutcome {
@@ -211,6 +243,8 @@ private fun ComplexesTab(
     onStart: (Complex) -> Unit,
     onEdit: (String) -> Unit,
     onSettings: () -> Unit,
+    onImportExport: () -> Unit,
+    onExport: (Complex) -> Unit,
 ) {
     var toDelete by remember { mutableStateOf<Complex?>(null) }
     val exById = remember(data.exercises) { data.exercises.associateBy { it.id } }
@@ -221,7 +255,10 @@ private fun ComplexesTab(
             .padding(start = 16.dp, end = 16.dp, bottom = 100.dp),
     ) {
         TabHeader("Your training", "Complexes") {
-            RoundIconButton(UiIcons.SETTINGS, "Settings", onSettings, background = C.Surface, iconSize = 20.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                RoundIconButton(UiIcons.IMPORT_EXPORT, "Import or export complexes", onImportExport, background = C.Surface, iconSize = 20.dp, tint = C.Lime)
+                RoundIconButton(UiIcons.SETTINGS, "Settings", onSettings, background = C.Surface, iconSize = 20.dp)
+            }
         }
         if (data.complexes.isEmpty()) {
             EmptyState("No complexes yet", "Tap “Create complex” to build your first training.")
@@ -246,6 +283,7 @@ private fun ComplexesTab(
                 handle = handle,
                 onStart = { onStart(c) },
                 onEdit = { onEdit(c.id) },
+                onExport = { onExport(c) },
                 onDelete = { toDelete = c },
             )
         }
@@ -271,6 +309,7 @@ private fun ComplexCard(
     handle: Modifier,
     onStart: () -> Unit,
     onEdit: () -> Unit,
+    onExport: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val icons = complex.exerciseIds().distinct().mapNotNull { exById[it]?.icon }
@@ -300,7 +339,7 @@ private fun ComplexCard(
                 color = C.Text,
                 modifier = Modifier.padding(start = 8.dp, top = 2.dp),
             )
-            OverflowMenu("Complex options", listOf("Edit" to onEdit, "Delete" to onDelete))
+            OverflowMenu("Complex options", listOf("Edit" to onEdit, "Export" to onExport, "Delete" to onDelete))
         }
         Row(
             Modifier.padding(end = 10.dp),
