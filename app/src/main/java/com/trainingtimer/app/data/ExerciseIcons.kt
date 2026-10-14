@@ -42,6 +42,17 @@ object ExerciseIcons {
         IconDef("pigeon", "Pigeon", "M2 21h20M8.5 4a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M10 6v8M10 14l-6 3 5 2M10 14l11 5M10 9l-2 4M10 9l3 4"),
         IconDef("butterfly", "Butterfly", "M10.5 4a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M12 6v9M12 15L5 18l7 2 7-2z M12 9l-3 8M12 9l3 8"),
         IconDef("forearm", "Forearm stretch", "M2 14h12l3-6M16 4l-1 5M18 4l-1 5M13 20l3-7"),
+        IconDef("neck", "Head tilts & turns", "M9 8a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M12 11v2M5 15q7-3 14 0M4.5 9a7.5 7.5 0 0 1 2.5-5.5M5 3.5h2v2M19.5 9a7.5 7.5 0 0 0-2.5-5.5M19 3.5h-2v2"),
+        IconDef("shoulderroll", "Shoulder circles", "M10.5 5a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M12 7v8M12 15l-2 6M12 15l2 6M8 9h8M8 9l-1 6M16 9l1 6M4.5 7.5a2.5 2.5 0 1 0 5.0 0a2.5 2.5 0 1 0 -5.0 0M14.5 7.5a2.5 2.5 0 1 0 5.0 0a2.5 2.5 0 1 0 -5.0 0"),
+        IconDef("armcircles", "Arm circles", "M10.5 6a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M12 8v6M12 14l-2 7M12 14l2 7M12 10H6M12 10h6M1.5 10a2.5 2.5 0 1 0 5.0 0a2.5 2.5 0 1 0 -5.0 0M17.5 10a2.5 2.5 0 1 0 5.0 0a2.5 2.5 0 1 0 -5.0 0"),
+        IconDef("elbowcircles", "Elbow circles", "M10.5 5a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M12 7v8M12 15l-2 6M12 15l2 6M12 9l-5 3 3-5M12 9l5 3-3-5M4.3 12a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0M15.3 12a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0"),
+        IconDef("wristcircles", "Wrist circles", "M10 22v-8M14 22v-8M10 14a2 2 0 0 1 4 0M4.5 9a7.5 7.5 0 0 1 15 0M19.5 9l-2.5-1M19.5 9l1-2.5"),
+        IconDef("hipcircles", "Hip circles", "M10.5 4a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M12 6v7M12 13l-3 8M12 13l3 8M12 8l-4 4M12 8l4 4M4 13a8 2.5 0 1 0 16 0a8 2.5 0 1 0 -16 0"),
+        IconDef("kneecircles", "Knee circles", "M10.5 4a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M12 6l1 6M13 12l-4 4 1 5M13 12l2 4-1 5M12 8l-3 8M12 8l3 8M5 16a7 2 0 1 0 14 0a7 2 0 1 0 -14 0"),
+        IconDef("catcow", "Cat–cow", "M2 21h20M5 21v-6M18 21v-6M5 15q6.5-7 13 0M1.5 13a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0"),
+        IconDef("glutebridge", "Glute bridge", "M2 21h20M2.5 19a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M6 20l7-6h4l1 7M7 19.5l-1 1.5"),
+        IconDef("pike", "Pike push-up", "M2 21h20M4 21l7-11M11 10l8 11M5.0 14.5a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M8 14.5l-2 6.5"),
+        IconDef("abwheel", "Ab wheel", "M2 21h20M5 21l2-6 7-2 4 3M14.0 10.5a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M17.0 18.5a2.5 2.5 0 1 0 5.0 0a2.5 2.5 0 1 0 -5.0 0"),
     )
 
     private val byKey = all.associateBy { it.key }

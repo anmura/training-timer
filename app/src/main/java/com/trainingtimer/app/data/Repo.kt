@@ -41,6 +41,7 @@ object Repo {
             write(fresh)
         }
         installDefaultProgram()
+        installAssetProgram("program_zaryadka_v1", "program_zaryadka.json")
     }
 
     /**
@@ -63,6 +64,19 @@ object Repo {
             // Keep going without the built-in program.
         }
         prefs.edit().putBoolean("default_program_v1", true).apply()
+    }
+
+    /** Adds a built-in program (exercises + complexes) from assets once per install. */
+    private fun installAssetProgram(flag: String, asset: String) {
+        val prefs = context.getSharedPreferences("app", Context.MODE_PRIVATE)
+        if (prefs.getBoolean(flag, false)) return
+        try {
+            val text = context.assets.open(asset).bufferedReader().use { it.readText() }
+            ImportExport.importJson(text)
+        } catch (e: Exception) {
+            // Keep going without it.
+        }
+        prefs.edit().putBoolean(flag, true).apply()
     }
 
     // ---------- exercises ----------
