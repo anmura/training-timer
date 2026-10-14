@@ -26,6 +26,15 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -311,46 +320,100 @@ fun TimeDialog(title: String, initial: Int, min: Int, onDismiss: () -> Unit, onC
     var minutes by remember { mutableStateOf((initial / 60).toString()) }
     var secs by remember { mutableStateOf((initial % 60).toString()) }
     val total = (minutes.toIntOrNull() ?: 0) * 60 + (secs.toIntOrNull() ?: 0)
-    val fieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = C.Lime,
-        focusedLabelColor = C.Lime,
-        cursorColor = C.Lime,
-    )
+    val valid = total >= min && total <= 3600
+    val minutesFocus = remember { FocusRequester() }
+    val secondsFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { minutesFocus.requestFocus() }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = C.Surface,
         title = { Text(title, color = C.Text) },
         text = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
+                SelectAllNumberField(
                     value = minutes,
-                    onValueChange = { v -> minutes = v.filter { it.isDigit() }.take(2) },
-                    label = { Text("min") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    colors = fieldColors,
+                    onValueChange = { minutes = it },
+                    label = "min",
+                    focusRequester = minutesFocus,
+                    imeAction = ImeAction.Next,
+                    onFilled = { secondsFocus.requestFocus() },
+                    onAction = { secondsFocus.requestFocus() },
                     modifier = Modifier.weight(1f),
                 )
                 Text(":", fontSize = 28.sp, color = C.Text)
-                OutlinedTextField(
+                SelectAllNumberField(
                     value = secs,
-                    onValueChange = { v -> secs = v.filter { it.isDigit() }.take(2) },
-                    label = { Text("sec") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    colors = fieldColors,
+                    onValueChange = { secs = it },
+                    label = "sec",
+                    focusRequester = secondsFocus,
+                    imeAction = ImeAction.Done,
+                    onFilled = {},
+                    onAction = { if (valid) onConfirm(total) },
                     modifier = Modifier.weight(1f),
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(total.coerceIn(min, 3600)) }, enabled = total >= min && total <= 3600) {
-                Text("OK", color = C.Lime)
+            TextButton(onClick = { onConfirm(total.coerceIn(min, 3600)) }, enabled = valid) {
+                Text("OK", color = if (valid) C.Lime else C.Muted)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel", color = C.Text) }
         },
+    )
+}
+
+/** Two-digit number field: its whole value is selected when it gets focus, so typing replaces it. */
+@Composable
+private fun SelectAllNumberField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    focusRequester: FocusRequester,
+    imeAction: ImeAction,
+    onFilled: () -> Unit,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var field by remember { mutableStateOf(TextFieldValue(value, TextRange(0, value.length))) }
+    // The tap that focuses the field also moves the cursor; keep the full selection for that first event.
+    var keepSelection by remember { mutableStateOf(false) }
+    OutlinedTextField(
+        value = field,
+        onValueChange = { next ->
+            val digits = next.text.filter { it.isDigit() }.take(2)
+            if (keepSelection && digits == field.text) {
+                keepSelection = false
+                field = field.copy(selection = TextRange(0, digits.length))
+            } else {
+                keepSelection = false
+                val changed = digits != field.text
+                field = if (digits == next.text) next else TextFieldValue(digits, TextRange(digits.length))
+                if (changed) {
+                    onValueChange(digits)
+                    if (digits.length == 2) onFilled()
+                }
+            }
+        },
+        label = { Text(label) },
+        singleLine = true,
+        textStyle = TextStyle(fontSize = 22.sp, color = C.Text),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = imeAction),
+        keyboardActions = KeyboardActions(onNext = { onAction() }, onDone = { onAction() }),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = C.Lime,
+            focusedLabelColor = C.Lime,
+            cursorColor = C.Lime,
+        ),
+        modifier = modifier
+            .focusRequester(focusRequester)
+            .onFocusChanged { state ->
+                if (state.isFocused) {
+                    keepSelection = true
+                    field = field.copy(selection = TextRange(0, field.text.length))
+                }
+            },
     )
 }
 
