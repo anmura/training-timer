@@ -38,7 +38,10 @@ jobs:
           name: Training Timer 1.0.${{ github.run_number }}
           body: |
             Download **TrainingTimer-1.0.${{ github.run_number }}.apk** below on your phone and open it to install.
-          files: TrainingTimer-1.0.${{ github.run_number }}.apk
+            **training_program.json** is a ready-made import file: in the app go to Exercises → Import / Export → Import exercises.
+          files: |
+            TrainingTimer-1.0.${{ github.run_number }}.apk
+            samples/training_program.json
           make_latest: true
 
       - name: Save build log
