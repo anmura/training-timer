@@ -118,7 +118,8 @@ object ImportExport {
                     val cycle = it.optJSONObject("cycle")
                     if (cycle != null) {
                         val steps = parseSteps(cycle.optJSONArray("items") ?: JSONArray(), name, byName, errors)
-                        if (steps.isNotEmpty()) items += ComplexItem.Cycle(cycle.optInt("repeats", 1).coerceIn(1, 99), steps)
+                        val cycleRest = if (cycle.has("rest")) cycle.optInt("rest", 0).coerceIn(0, 3600) else null
+                        if (steps.isNotEmpty()) items += ComplexItem.Cycle(cycle.optInt("repeats", 1).coerceIn(1, 99), steps, rest = cycleRest)
                     } else {
                         val step = parseStep(it, name, byName, errors)
                         if (step != null) items += ComplexItem.Single(step)
@@ -182,7 +183,9 @@ object ImportExport {
                     is ComplexItem.Cycle -> {
                         val steps = JSONArray()
                         for (s in item.steps) byId[s.exerciseId]?.let { steps.put(stepJson(it, s)) }
-                        items.put(JSONObject().put("cycle", JSONObject().put("repeats", item.repeats).put("items", steps)))
+                        val c = JSONObject().put("repeats", item.repeats).put("items", steps)
+                        if (item.rest != null) c.put("rest", item.rest)
+                        items.put(JSONObject().put("cycle", c))
                     }
                 }
             }

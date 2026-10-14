@@ -147,6 +147,16 @@ object Repo {
 
     fun deleteComplex(id: String) = update { d -> d.copy(complexes = d.complexes.filter { it.id != id }) }
 
+    fun moveComplex(from: Int, to: Int) = update { d ->
+        if (from !in d.complexes.indices || to !in d.complexes.indices) {
+            d
+        } else {
+            val list = d.complexes.toMutableList()
+            list.add(to, list.removeAt(from))
+            d.copy(complexes = list)
+        }
+    }
+
     // ---------- settings / import ----------
 
     fun updateSettings(settings: Settings) = update { it.copy(settings = settings) }
@@ -199,7 +209,9 @@ object Codec {
                     is ComplexItem.Cycle -> {
                         val steps = JSONArray()
                         for (s in item.steps) steps.put(JSONObject().put("ex", s.exerciseId).put("sec", s.seconds))
-                        items.put(JSONObject().put("type", "cycle").put("repeats", item.repeats).put("steps", steps))
+                        val o = JSONObject().put("type", "cycle").put("repeats", item.repeats).put("steps", steps)
+                        if (item.rest != null) o.put("rest", item.rest)
+                        items.put(o)
                     }
                 }
             }
@@ -240,7 +252,8 @@ object Codec {
                             val s = stArr.getJSONObject(k)
                             steps += Step(s.getString("ex"), s.getInt("sec"))
                         }
-                        items += ComplexItem.Cycle(it.optInt("repeats", 1), steps)
+                        val rest = if (it.has("rest")) it.optInt("rest", 0) else null
+                        items += ComplexItem.Cycle(it.optInt("repeats", 1), steps, rest = rest)
                     } else {
                         items += ComplexItem.Single(Step(it.getString("ex"), it.getInt("sec")))
                     }

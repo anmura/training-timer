@@ -10,6 +10,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
@@ -211,23 +213,36 @@ private fun ComplexesTab(
 ) {
     var toDelete by remember { mutableStateOf<Complex?>(null) }
     val exById = remember(data.exercises) { data.exercises.associateBy { it.id } }
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 100.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 16.dp, end = 16.dp, bottom = 100.dp),
     ) {
-        item {
-            TabHeader("Your training", "Complexes") {
-                RoundIconButton(UiIcons.SETTINGS, "Settings", onSettings, background = C.Surface, iconSize = 20.dp)
-            }
+        TabHeader("Your training", "Complexes") {
+            RoundIconButton(UiIcons.SETTINGS, "Settings", onSettings, background = C.Surface, iconSize = 20.dp)
         }
         if (data.complexes.isEmpty()) {
-            item { EmptyState("No complexes yet", "Tap “Create complex” to build your first training.") }
+            EmptyState("No complexes yet", "Tap “Create complex” to build your first training.")
         }
-        items(data.complexes, key = { it.id }) { c ->
+        if (data.complexes.size > 1) {
+            Text(
+                "Hold a card and drag to reorder",
+                fontSize = 12.sp,
+                color = C.Muted,
+                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+            )
+        }
+        DraggableColumn(
+            items = data.complexes,
+            keyOf = { it.id },
+            onMove = { from, to -> Repo.moveComplex(from, to) },
+            spacing = 12.dp,
+        ) { c, _, handle ->
             ComplexCard(
                 complex = c,
                 exById = exById,
+                handle = handle,
                 onStart = { onStart(c) },
                 onEdit = { onEdit(c.id) },
                 onDelete = { toDelete = c },
@@ -252,13 +267,14 @@ private fun ComplexesTab(
 private fun ComplexCard(
     complex: Complex,
     exById: Map<String, Exercise>,
+    handle: Modifier,
     onStart: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val icons = complex.exerciseIds().distinct().mapNotNull { exById[it]?.icon }
     Column(
-        Modifier
+        handle
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .background(C.Surface)

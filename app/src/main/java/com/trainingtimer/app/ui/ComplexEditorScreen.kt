@@ -87,6 +87,24 @@ private class ComplexDraft(existing: Complex?) {
         if (i >= 0) items.removeAt(i)
     }
 
+    /** Moves a single exercise from the list to the end of a cycle. */
+    fun moveIntoCycle(singleKey: String, cycleKey: String) {
+        val single = items.getOrNull(indexOf(singleKey)) as? ComplexItem.Single ?: return
+        val ci = indexOf(cycleKey)
+        val cycle = items.getOrNull(ci) as? ComplexItem.Cycle ?: return
+        items[ci] = cycle.copy(steps = cycle.steps + single.step.copy(key = newId()))
+        remove(singleKey)
+    }
+
+    /** Takes an exercise out of a cycle and puts it into the list right after that cycle. */
+    fun moveOutOfCycle(cycleKey: String, stepKey: String) {
+        val ci = indexOf(cycleKey)
+        val cycle = items.getOrNull(ci) as? ComplexItem.Cycle ?: return
+        val step = cycle.steps.find { it.key == stepKey } ?: return
+        items[ci] = cycle.copy(steps = cycle.steps.filter { it.key != stepKey })
+        items.add(ci + 1, ComplexItem.Single(step.copy(key = newId())))
+    }
+
     fun moveIndex(from: Int, to: Int) {
         if (from !in items.indices || to !in items.indices || from == to) return
         val item = items.removeAt(from)
@@ -308,6 +326,7 @@ private fun BuilderStep(
             if (draft.items.isEmpty()) {
                 EmptyState("Nothing here yet", "Add exercises or a cycle below.")
             }
+            val cycleKeys = draft.items.filterIsInstance<ComplexItem.Cycle>().map { it.key }
             DraggableColumn(
                 items = draft.items,
                 keyOf = { it.key },
@@ -319,22 +338,31 @@ private fun BuilderStep(
                         exercise = exById[item.step.exerciseId],
                         handle = handle,
                         onTime = { sec -> draft.replace(item.key, item.copy(step = item.step.copy(seconds = sec))) },
-                        onRemove = { draft.remove(item.key) },
+                        menu = cycleKeys.mapIndexed { n, key ->
+                            (if (cycleKeys.size == 1) "Move into cycle" else "Move into cycle ${n + 1}") to { draft.moveIntoCycle(item.key, key) }
+                        } + ("Remove" to { draft.remove(item.key) }),
                     )
                     is ComplexItem.Cycle -> CycleBlock(
                         cycle = item,
+                        number = if (cycleKeys.size > 1) cycleKeys.indexOf(item.key) + 1 else 0,
+                        complexRest = draft.rest,
                         exById = exById,
                         handle = handle,
                         onChange = { draft.replace(item.key, it) },
+                        onMoveOut = { stepKey -> draft.moveOutOfCycle(item.key, stepKey) },
                         onAddExercises = { pickerForCycle = item.key },
                         onRemove = { draft.remove(item.key) },
                     )
                 }
             }
+        }
+
+        // Add buttons stay pinned above the save bar, so there's no need to scroll down to them.
+        Column(Modifier.fillMaxWidth().background(C.Bg)) {
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 BigButton(
@@ -425,7 +453,7 @@ private fun SingleRow(
     exercise: Exercise?,
     handle: Modifier,
     onTime: (Int) -> Unit,
-    onRemove: () -> Unit,
+    menu: List<Pair<String, () -> Unit>>,
 ) {
     Row(
         handle
@@ -448,15 +476,18 @@ private fun SingleRow(
             lineHeight = 18.sp,
         )
         TimeStepper(item.step.seconds, onTime, buttonWidth = 30.dp, title = exercise?.name ?: "Set time")
-        RoundIconButton(UiIcons.CLOSE, "Remove", onRemove, size = 36.dp, tint = C.Muted, iconSize = 16.dp)
+        OverflowMenu("Exercise options", menu, size = 36.dp)
     }
 }
 
 @Composable
 private fun CycleBlock(
     cycle: ComplexItem.Cycle,
+    number: Int,
+    complexRest: Int,
     exById: Map<String, Exercise>,
     onChange: (ComplexItem.Cycle) -> Unit,
+    onMoveOut: (String) -> Unit,
     handle: Modifier,
     onAddExercises: () -> Unit,
     onRemove: () -> Unit,
@@ -477,7 +508,7 @@ private fun CycleBlock(
             PathIcon(UiIcons.REPEAT, C.Lime, size = 22.dp)
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
-                Text("Cycle", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
+                Text(if (number > 0) "Cycle $number" else "Cycle", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
                 val n = cycle.steps.size
                 Text(
                     "${if (n == 1) "1 exercise" else "$n exercises"} · ${formatTime(cycle.steps.sumOf { it.seconds })} per round",
@@ -496,6 +527,39 @@ private fun CycleBlock(
                 plusLabel = "More repeats",
             )
             OverflowMenu("Cycle options", listOf("Remove cycle" to onRemove), size = 36.dp)
+        }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(C.Surface)
+                .padding(start = 12.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PathIcon(UiIcons.TIMER, C.Orange, size = 20.dp)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Rest in cycle", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = C.Text)
+                if (cycle.rest == null) {
+                    Text("Same as complex", fontSize = 12.sp, color = C.Muted)
+                } else {
+                    Text(
+                        "Use complex rest",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = C.Lime,
+                        modifier = Modifier.clickable(role = Role.Button) { onChange(cycle.copy(rest = null)) },
+                    )
+                }
+            }
+            TimeStepper(
+                cycle.rest ?: complexRest,
+                { onChange(cycle.copy(rest = it)) },
+                min = 0,
+                textColor = if (cycle.rest == null) C.Muted else C.Orange,
+                buttonWidth = 28.dp,
+                title = "Rest in cycle",
+            )
         }
         DraggableColumn(
             items = cycle.steps,
@@ -533,13 +597,13 @@ private fun CycleBlock(
                     buttonWidth = 28.dp,
                     title = ex?.name ?: "Set time",
                 )
-                RoundIconButton(
-                    UiIcons.CLOSE,
-                    "Remove from cycle",
-                    { onChange(cycle.copy(steps = cycle.steps.filter { it.key != s.key })) },
+                OverflowMenu(
+                    "Exercise options",
+                    listOf(
+                        "Move out of cycle" to { onMoveOut(s.key) },
+                        "Remove from cycle" to { onChange(cycle.copy(steps = cycle.steps.filter { it.key != s.key })) },
+                    ),
                     size = 34.dp,
-                    tint = C.Muted,
-                    iconSize = 16.dp,
                 )
             }
         }

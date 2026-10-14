@@ -14,7 +14,13 @@ sealed class ComplexItem {
 
     data class Single(val step: Step, override val key: String = newId()) : ComplexItem()
 
-    data class Cycle(val repeats: Int, val steps: List<Step>, override val key: String = newId()) : ComplexItem()
+    /** [rest] is the rest between exercises inside this cycle (also between its rounds); null = use the complex's rest. */
+    data class Cycle(
+        val repeats: Int,
+        val steps: List<Step>,
+        override val key: String = newId(),
+        val rest: Int? = null,
+    ) : ComplexItem()
 }
 
 data class Complex(
@@ -43,27 +49,43 @@ fun Complex.exerciseIds(): List<String> = items.flatMap { item ->
     }
 }
 
-/** Number of exercise intervals in the whole workout, cycles expanded. */
-fun Complex.setCount(): Int = items.sumOf { item ->
-    when (item) {
-        is ComplexItem.Single -> 1
-        is ComplexItem.Cycle -> item.steps.size * item.repeats
+/** One exercise interval of the expanded workout and the rest that follows it (0 after the last one). */
+data class FlatSet(
+    val exerciseId: String,
+    val seconds: Int,
+    val round: Int,
+    val rounds: Int,
+    val restAfter: Int,
+)
+
+private data class RawSet(val step: Step, val round: Int, val rounds: Int, val cycleKey: String?, val cycleRest: Int?)
+
+/** The workout in order, cycles expanded. Rest between two sets of the same cycle uses the cycle's own rest if set. */
+fun Complex.flatten(): List<FlatSet> {
+    val raw = ArrayList<RawSet>()
+    for (item in items) {
+        when (item) {
+            is ComplexItem.Single -> raw += RawSet(item.step, 0, 0, null, null)
+            is ComplexItem.Cycle -> for (r in 1..item.repeats) {
+                for (s in item.steps) raw += RawSet(s, r, item.repeats, item.key, item.rest)
+            }
+        }
+    }
+    return raw.mapIndexed { i, r ->
+        val rest = when {
+            i == raw.lastIndex -> 0
+            r.cycleKey != null && r.cycleKey == raw[i + 1].cycleKey -> r.cycleRest ?: restSeconds
+            else -> restSeconds
+        }
+        FlatSet(r.step.exerciseId, r.step.seconds, r.round, r.rounds, rest)
     }
 }
 
-/** Total workout length in seconds: all exercises plus rest between them (no rest after the last one). */
-fun Complex.totalSeconds(): Int {
-    var work = 0
-    for (item in items) {
-        when (item) {
-            is ComplexItem.Single -> work += item.step.seconds
-            is ComplexItem.Cycle -> work += item.steps.sumOf { it.seconds } * item.repeats
-        }
-    }
-    val sets = setCount()
-    val rest = if (sets > 1) (sets - 1) * restSeconds else 0
-    return work + rest
-}
+/** Number of exercise intervals in the whole workout, cycles expanded. */
+fun Complex.setCount(): Int = flatten().size
+
+/** Total workout length in seconds: all exercises plus the rests between them. */
+fun Complex.totalSeconds(): Int = flatten().sumOf { it.seconds + it.restAfter }
 
 fun Complex.describe(): String {
     val n = exerciseIds().size

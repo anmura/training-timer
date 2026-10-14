@@ -11,7 +11,7 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.content.ContextCompat
 import com.trainingtimer.app.data.Complex
-import com.trainingtimer.app.data.ComplexItem
+import com.trainingtimer.app.data.flatten
 import com.trainingtimer.app.data.Exercise
 import com.trainingtimer.app.data.Repo
 import com.trainingtimer.app.data.totalSeconds
@@ -61,34 +61,16 @@ data class WorkoutState(
     val restIsNext: Boolean get() = phases.getOrNull(index + 1)?.type == PhaseType.REST
 }
 
-private data class WorkItem(val exercise: Exercise, val seconds: Int, val round: Int, val rounds: Int)
-
 fun buildPhases(complex: Complex, exercises: List<Exercise>): List<Phase> {
     val byId = exercises.associateBy { it.id }
-    val works = ArrayList<WorkItem>()
-    for (item in complex.items) {
-        when (item) {
-            is ComplexItem.Single -> {
-                val ex = byId[item.step.exerciseId]
-                if (ex != null) works += WorkItem(ex, item.step.seconds, 0, 0)
-            }
-            is ComplexItem.Cycle -> {
-                for (r in 1..item.repeats) {
-                    for (s in item.steps) {
-                        val ex = byId[s.exerciseId]
-                        if (ex != null) works += WorkItem(ex, s.seconds, r, item.repeats)
-                    }
-                }
-            }
-        }
-    }
+    val sets = complex.flatten().mapNotNull { f -> byId[f.exerciseId]?.let { ex -> f to ex } }
     val out = ArrayList<Phase>()
-    works.forEachIndexed { i, w ->
-        out += Phase(PhaseType.WORK, w.exercise, w.seconds, i + 1, w.round, w.rounds)
-        // Same rest between all exercises, including between cycle rounds; none after the last exercise.
-        if (i < works.lastIndex && complex.restSeconds > 0) {
-            val n = works[i + 1]
-            out += Phase(PhaseType.REST, n.exercise, complex.restSeconds, i + 2, n.round, n.rounds)
+    sets.forEachIndexed { i, (f, ex) ->
+        out += Phase(PhaseType.WORK, ex, f.seconds, i + 1, f.round, f.rounds)
+        // No rest after the last exercise.
+        if (i < sets.lastIndex && f.restAfter > 0) {
+            val (next, nextEx) = sets[i + 1]
+            out += Phase(PhaseType.REST, nextEx, f.restAfter, i + 2, next.round, next.rounds)
         }
     }
     return out
