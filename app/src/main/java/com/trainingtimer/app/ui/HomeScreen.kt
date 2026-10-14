@@ -329,7 +329,7 @@ private fun ExercisesTab(
                 if (data.exercises.size == 1) "1 exercise" else "${data.exercises.size} exercises",
                 "Exercises",
             ) {
-                PillButton("Import / Export", UiIcons.IMPORT_EXPORT, onImportExport)
+                PillButton("Import", UiIcons.IMPORT_EXPORT, onImportExport)
             }
         }
         item {

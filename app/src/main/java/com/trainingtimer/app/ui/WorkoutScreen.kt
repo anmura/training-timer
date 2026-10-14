@@ -7,6 +7,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -119,9 +123,9 @@ private fun WorkoutHeader(s: WorkoutState, onClose: () -> Unit, muted: Color, ba
         Column(Modifier.weight(1f)) {
             Text(s.complexName, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = C.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
             val progress = if (p.type == PhaseType.WORK) {
-                "Exercise ${p.workNumber} of ${s.totalWork}"
+                "Exercise ${p.workNumber}/${s.totalWork}"
             } else {
-                "Exercise ${p.workNumber - 1} of ${s.totalWork} done"
+                "${p.workNumber - 1}/${s.totalWork} done"
             }
             Text("$progress · ${formatTime(s.totalLeftSec)} left", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = muted, maxLines = 1)
         }
@@ -137,7 +141,7 @@ private fun WorkoutHeader(s: WorkoutState, onClose: () -> Unit, muted: Color, ba
             ) {
                 PathIcon(UiIcons.REPEAT, badgeFg, size = 16.dp, strokeWidth = 2.2f)
                 Spacer(Modifier.width(6.dp))
-                Text("Round ${p.round} / ${p.rounds}", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = badgeFg)
+                Text("${p.round}/${p.rounds}", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = badgeFg, maxLines = 1)
             }
         }
     }
@@ -250,7 +254,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                     Text(
                         p.exercise.name,
                         fontFamily = Condensed,
-                        fontSize = 36.sp,
+                        fontSize = 34.sp,
                         lineHeight = 38.sp,
                         color = C.Text,
                         maxLines = 2,
@@ -351,6 +355,7 @@ private fun NextCard(s: WorkoutState) {
 
 // ---------- rest ----------
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RestView(s: WorkoutState, onClose: () -> Unit) {
     val p = s.phase
@@ -378,7 +383,7 @@ private fun RestView(s: WorkoutState, onClose: () -> Unit) {
             Spacer(Modifier.width(20.dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(if (s.paused) "PAUSED" else "REST", fontFamily = Condensed, fontSize = 52.sp, lineHeight = 52.sp, color = C.Orange)
-                Text("Breathe. Get into position for the next exercise.", fontSize = 14.sp, color = C.RestMuted)
+                Text("Get into position for the next exercise.", fontSize = 14.sp, color = C.RestMuted, maxLines = 3)
             }
         }
         Row(
@@ -396,17 +401,23 @@ private fun RestView(s: WorkoutState, onClose: () -> Unit) {
                 fontSize = 14.sp,
                 modifier = Modifier.weight(1f),
             )
-            BigButton(
-                if (s.paused) "Resume" else "Pause",
-                onClick = { WorkoutEngine.togglePause() },
-                icon = if (s.paused) UiIcons.PLAY else UiIcons.PAUSE,
-                iconFilled = true,
-                container = C.RestSurface2,
-                content = C.Text,
-                height = 48.dp,
-                fontSize = 14.sp,
-                modifier = Modifier.weight(1f),
-            )
+            Box(
+                Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(C.RestSurface2),
+                contentAlignment = Alignment.Center,
+            ) {
+                RoundIconButton(
+                    if (s.paused) UiIcons.PLAY else UiIcons.PAUSE,
+                    if (s.paused) "Resume" else "Pause",
+                    { WorkoutEngine.togglePause() },
+                    size = 48.dp,
+                    filled = true,
+                    iconSize = 22.dp,
+                )
+            }
             BigButton(
                 "Skip",
                 onClick = { WorkoutEngine.skip() },
@@ -428,19 +439,20 @@ private fun RestView(s: WorkoutState, onClose: () -> Unit) {
                 .clip(RoundedCornerShape(28.dp))
                 .background(C.RestSurface)
                 .border(1.5.dp, C.RestLine, RoundedCornerShape(28.dp))
-                .padding(horizontal = 20.dp, vertical = 22.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text("UP NEXT", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.6.sp, color = C.Orange)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ExerciseIcon(p.exercise.icon, tileSize = 104.dp, iconSize = 64.dp, tile = C.RestSurface2, corner = 30.dp, strokeWidth = 1.4f)
                 Spacer(Modifier.width(18.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(p.exercise.name, fontFamily = Condensed, fontSize = 40.sp, lineHeight = 42.sp, color = C.Text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(p.exercise.name, fontFamily = Condensed, fontSize = 36.sp, lineHeight = 40.sp, color = C.Text, maxLines = 3, overflow = TextOverflow.Ellipsis)
                     Text(formatTime(p.seconds), fontFamily = Condensed, fontSize = 30.sp, color = C.Lime)
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (p.rounds > 0) InfoChip("Round ${p.round} of ${p.rounds}", UiIcons.REPEAT)
                 InfoChip("Exercise ${p.workNumber} of ${s.totalWork}", null)
             }
@@ -481,7 +493,7 @@ private fun InfoChip(text: String, icon: String?) {
 @Composable
 private fun ThenRow(p: Phase) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        ExerciseIcon(p.exercise.icon, tileSize = 36.dp, iconSize = 20.dp, tile = C.RestSurface2, tint = C.RestMuted, corner = 10.dp)
+        ExerciseIcon(p.exercise.icon, tileSize = 44.dp, iconSize = 26.dp, tile = C.RestSurface2, corner = 12.dp)
         Spacer(Modifier.width(12.dp))
         val round = if (p.rounds > 0) " · round ${p.round}" else ""
         Text("${p.exercise.name}$round", Modifier.weight(1f), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD9D2CB), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -511,7 +523,7 @@ private fun FinishedView(s: WorkoutState, onDone: () -> Unit) {
             PathIcon(UiIcons.CHECK, C.Lime, size = 56.dp, strokeWidth = 2.6f)
         }
         Spacer(Modifier.height(24.dp))
-        Text("Workout complete", fontFamily = Condensed, fontSize = 44.sp, color = C.Text, textAlign = TextAlign.Center)
+        Text("Workout complete", fontFamily = Condensed, fontSize = 40.sp, lineHeight = 44.sp, color = C.Text, textAlign = TextAlign.Center)
         Spacer(Modifier.height(8.dp))
         Text(s.complexName, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = C.Muted, textAlign = TextAlign.Center)
         Spacer(Modifier.height(24.dp))

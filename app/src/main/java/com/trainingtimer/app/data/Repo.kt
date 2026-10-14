@@ -36,10 +36,33 @@ object Repo {
         if (loaded != null) {
             _state.value = loaded
         } else {
-            val fresh = AppData(exercises = defaultExercises())
+            val fresh = AppData()
             _state.value = fresh
             write(fresh)
         }
+        installDefaultProgram()
+    }
+
+    /**
+     * Once per install: swap the old English sample exercises for the built-in Russian program
+     * (exercises + complexes from assets/default_program.json). Sample exercises that are used in
+     * one of the user's complexes are kept; anything with an existing name is skipped.
+     */
+    private fun installDefaultProgram() {
+        val prefs = context.getSharedPreferences("app", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("default_program_v1", false)) return
+        val demo = setOf("Burpees", "Jumping jacks", "Lunges", "Mountain climbers", "Plank", "Push-ups", "Sit-ups", "Squats")
+        update { d ->
+            val used = d.complexes.flatMap { it.exerciseIds() }.toSet()
+            d.copy(exercises = d.exercises.filter { !(it.name in demo && it.id !in used) })
+        }
+        try {
+            val text = context.assets.open("default_program.json").bufferedReader().use { it.readText() }
+            ImportExport.importJson(text)
+        } catch (e: Exception) {
+            // Keep going without the built-in program.
+        }
+        prefs.edit().putBoolean("default_program_v1", true).apply()
     }
 
     // ---------- exercises ----------
@@ -142,17 +165,6 @@ object Repo {
             // Keep running with in-memory data if the disk write fails.
         }
     }
-
-    private fun defaultExercises(): List<Exercise> = listOf(
-        "Burpees" to "jump",
-        "Jumping jacks" to "jacks",
-        "Lunges" to "lunge",
-        "Mountain climbers" to "run",
-        "Plank" to "plank",
-        "Push-ups" to "pushup",
-        "Sit-ups" to "abs",
-        "Squats" to "squat",
-    ).map { (name, icon) -> Exercise(newId(), name, icon) }
 }
 
 /** Internal storage format (with ids). The import/export format is in [ImportExport]. */

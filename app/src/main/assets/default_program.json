@@ -1,0 +1,299 @@
+{
+  "version": 1,
+  "exercises": [
+    {
+      "name": "Скольжение по стене",
+      "icon": "wallslide"
+    },
+    {
+      "name": "Тяга резинкой к лицу",
+      "icon": "facepull"
+    },
+    {
+      "name": "Выкруты с резинкой",
+      "icon": "dislocate"
+    },
+    {
+      "name": "Замок за спиной",
+      "icon": "handslock"
+    },
+    {
+      "name": "Грудная у стены, локоть на уровне плеча",
+      "icon": "chestwall"
+    },
+    {
+      "name": "Грудная у стены, локоть выше головы",
+      "icon": "chestwallhigh"
+    },
+    {
+      "name": "Грудной отдел на опоре",
+      "icon": "thoracic"
+    },
+    {
+      "name": "Подтягивания",
+      "icon": "pullup"
+    },
+    {
+      "name": "Брусья",
+      "icon": "dips"
+    },
+    {
+      "name": "Отжимания",
+      "icon": "pushup"
+    },
+    {
+      "name": "Приседания на одной ноге",
+      "icon": "pistol"
+    },
+    {
+      "name": "Подъёмы ног",
+      "icon": "legraise"
+    },
+    {
+      "name": "Сгибание запястий с весом",
+      "icon": "wristcurl"
+    },
+    {
+      "name": "Разгибание запястий с весом",
+      "icon": "wristext"
+    },
+    {
+      "name": "Наклоны грифа влево-вправо",
+      "icon": "bartilt"
+    },
+    {
+      "name": "Скручивание на боку",
+      "icon": "sidetwist"
+    },
+    {
+      "name": "Колени к груди",
+      "icon": "kneeschest"
+    },
+    {
+      "name": "Задняя поверхность бедра",
+      "icon": "hamstring"
+    },
+    {
+      "name": "Выпад",
+      "icon": "lunge"
+    },
+    {
+      "name": "Голубь",
+      "icon": "pigeon"
+    },
+    {
+      "name": "Бабочка",
+      "icon": "butterfly"
+    },
+    {
+      "name": "Предплечья",
+      "icon": "forearm"
+    }
+  ],
+  "complexes": [
+    {
+      "name": "Плечи",
+      "rest": 15,
+      "items": [
+        {
+          "cycle": {
+            "repeats": 3,
+            "items": [
+              {
+                "exercise": "Скольжение по стене",
+                "time": 40
+              }
+            ]
+          }
+        },
+        {
+          "cycle": {
+            "repeats": 3,
+            "items": [
+              {
+                "exercise": "Тяга резинкой к лицу",
+                "time": 45
+              }
+            ]
+          }
+        },
+        {
+          "cycle": {
+            "repeats": 3,
+            "items": [
+              {
+                "exercise": "Выкруты с резинкой",
+                "time": 40
+              }
+            ]
+          }
+        },
+        {
+          "exercise": "Замок за спиной",
+          "time": 45
+        },
+        {
+          "cycle": {
+            "repeats": 2,
+            "items": [
+              {
+                "exercise": "Грудная у стены, локоть на уровне плеча",
+                "time": 45
+              }
+            ]
+          }
+        },
+        {
+          "cycle": {
+            "repeats": 2,
+            "items": [
+              {
+                "exercise": "Грудная у стены, локоть выше головы",
+                "time": 45
+              }
+            ]
+          }
+        },
+        {
+          "exercise": "Грудной отдел на опоре",
+          "time": 60
+        }
+      ]
+    },
+    {
+      "name": "Силовые",
+      "rest": 60,
+      "items": [
+        {
+          "cycle": {
+            "repeats": 3,
+            "items": [
+              {
+                "exercise": "Подтягивания",
+                "time": 40
+              }
+            ]
+          }
+        },
+        {
+          "cycle": {
+            "repeats": 3,
+            "items": [
+              {
+                "exercise": "Брусья",
+                "time": 40
+              }
+            ]
+          }
+        },
+        {
+          "cycle": {
+            "repeats": 3,
+            "items": [
+              {
+                "exercise": "Отжимания",
+                "time": 45
+              }
+            ]
+          }
+        },
+        {
+          "cycle": {
+            "repeats": 3,
+            "items": [
+              {
+                "exercise": "Приседания на одной ноге",
+                "time": 60
+              }
+            ]
+          }
+        },
+        {
+          "cycle": {
+            "repeats": 3,
+            "items": [
+              {
+                "exercise": "Подъёмы ног",
+                "time": 40
+              }
+            ]
+          }
+        },
+        {
+          "cycle": {
+            "repeats": 3,
+            "items": [
+              {
+                "exercise": "Сгибание запястий с весом",
+                "time": 45
+              }
+            ]
+          }
+        },
+        {
+          "cycle": {
+            "repeats": 3,
+            "items": [
+              {
+                "exercise": "Разгибание запястий с весом",
+                "time": 45
+              }
+            ]
+          }
+        },
+        {
+          "cycle": {
+            "repeats": 3,
+            "items": [
+              {
+                "exercise": "Наклоны грифа влево-вправо",
+                "time": 60
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Растяжка",
+      "rest": 10,
+      "items": [
+        {
+          "exercise": "Скручивание на боку",
+          "time": 45
+        },
+        {
+          "exercise": "Колени к груди",
+          "time": 45
+        },
+        {
+          "exercise": "Задняя поверхность бедра",
+          "time": 45
+        },
+        {
+          "exercise": "Выпад",
+          "time": 45
+        },
+        {
+          "exercise": "Голубь",
+          "time": 45
+        },
+        {
+          "exercise": "Бабочка",
+          "time": 60
+        },
+        {
+          "cycle": {
+            "repeats": 2,
+            "items": [
+              {
+                "exercise": "Предплечья",
+                "time": 30
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

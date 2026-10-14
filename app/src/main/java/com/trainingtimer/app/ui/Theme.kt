@@ -2,7 +2,10 @@ package com.trainingtimer.app.ui
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 
@@ -61,6 +64,10 @@ fun AppTheme(content: @Composable () -> Unit) {
             outline = C.Line,
             error = C.Red,
         ),
-        content = content,
-    )
+    ) {
+        CompositionLocalProvider(
+            LocalTextStyle provides LocalTextStyle.current.copy(lineHeight = TextUnit.Unspecified),
+            content = content,
+        )
+    }
 }

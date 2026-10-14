@@ -201,7 +201,7 @@ fun BigButton(
             PathIcon(icon, LocalContentColor.current, size = 20.dp, strokeWidth = 2.6f, filled = iconFilled)
             Spacer(Modifier.width(8.dp))
         }
-        Text(text, fontWeight = FontWeight.ExtraBold, fontSize = fontSize)
+        Text(text, fontWeight = FontWeight.ExtraBold, fontSize = fontSize, maxLines = 1, softWrap = false)
     }
 }
 
@@ -218,7 +218,7 @@ fun PillButton(text: String, icon: String, onClick: () -> Unit, modifier: Modifi
     ) {
         PathIcon(icon, C.Lime, size = 18.dp, strokeWidth = 2.2f)
         Spacer(Modifier.width(8.dp))
-        Text(text, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = C.Text)
+        Text(text, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = C.Text, maxLines = 1, softWrap = false)
     }
 }
 
@@ -390,12 +390,13 @@ fun TabHeader(label: String, title: String, action: @Composable () -> Unit = {})
         Modifier
             .fillMaxWidth()
             .padding(start = 4.dp, end = 4.dp, top = 28.dp, bottom = 12.dp),
-        verticalAlignment = Alignment.Bottom,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(label.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = C.Muted, letterSpacing = 1.2.sp)
-            Text(title, fontFamily = Condensed, fontSize = 44.sp, lineHeight = 46.sp, color = C.Text)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(label.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = C.Muted, letterSpacing = 1.2.sp, maxLines = 1)
+            Text(title, fontFamily = Condensed, fontSize = 40.sp, color = C.Text, maxLines = 1, softWrap = false)
         }
+        Spacer(Modifier.width(8.dp))
         action()
     }
 }
