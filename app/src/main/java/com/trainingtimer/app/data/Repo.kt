@@ -1,0 +1,229 @@
+package com.trainingtimer.app.data
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
+
+/** Keeps all app data in memory and in one JSON file on the phone. */
+object Repo {
+    private var appContext: Context? = null
+    private val _state = MutableStateFlow(AppData())
+    val state: StateFlow<AppData> = _state
+
+    private val context: Context get() = appContext ?: error("Repo.init was not called")
+
+    val iconsDir: File
+        get() = File(context.filesDir, "icons").apply { mkdirs() }
+
+    fun init(context: Context) {
+        if (appContext != null) return
+        appContext = context.applicationContext
+        val file = dataFile()
+        val loaded = if (file.exists()) {
+            try {
+                Codec.fromJson(JSONObject(file.readText()))
+            } catch (e: Exception) {
+                null
+            }
+        } else null
+        if (loaded != null) {
+            _state.value = loaded
+        } else {
+            val fresh = AppData(exercises = defaultExercises())
+            _state.value = fresh
+            write(fresh)
+        }
+    }
+
+    // ---------- exercises ----------
+
+    fun saveExercise(exercise: Exercise) = update { d ->
+        val exists = d.exercises.any { it.id == exercise.id }
+        d.copy(exercises = if (exists) d.exercises.map { if (it.id == exercise.id) exercise else it } else d.exercises + exercise)
+    }
+
+    fun nameExists(name: String, exceptId: String?): Boolean {
+        val n = name.trim().lowercase()
+        return _state.value.exercises.any { it.id != exceptId && it.name.trim().lowercase() == n }
+    }
+
+    fun usageCount(exerciseId: String): Int =
+        _state.value.complexes.count { c -> c.exerciseIds().contains(exerciseId) }
+
+    fun deleteExercise(id: String) {
+        val removed = _state.value.exercises.find { it.id == id }
+        update { d ->
+            val complexes = d.complexes.map { c ->
+                val items = c.items.mapNotNull { item ->
+                    when (item) {
+                        is ComplexItem.Single -> if (item.step.exerciseId == id) null else item
+                        is ComplexItem.Cycle -> {
+                            val steps = item.steps.filter { it.exerciseId != id }
+                            if (steps.isEmpty()) null else item.copy(steps = steps)
+                        }
+                    }
+                }
+                c.copy(items = items)
+            }
+            d.copy(exercises = d.exercises.filter { it.id != id }, complexes = complexes)
+        }
+        if (removed != null && removed.icon.startsWith("img:")) {
+            File(iconsDir, removed.icon.removePrefix("img:")).delete()
+        }
+    }
+
+    /** Copies a picture from the gallery into app storage as a 256x256 square; returns the icon value or null. */
+    fun saveIconFromUri(uri: Uri): String? {
+        try {
+            val resolver = context.contentResolver
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+            var sample = 1
+            while (bounds.outWidth / (sample * 2) >= 256 && bounds.outHeight / (sample * 2) >= 256) sample *= 2
+            val options = BitmapFactory.Options().apply { inSampleSize = sample }
+            val bitmap = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) } ?: return null
+            val side = minOf(bitmap.width, bitmap.height)
+            val square = Bitmap.createBitmap(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side)
+            val scaled = Bitmap.createScaledBitmap(square, 256, 256, true)
+            val fileName = newId() + ".jpg"
+            FileOutputStream(File(iconsDir, fileName)).use { scaled.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            return "img:$fileName"
+        } catch (e: Exception) {
+            return null
+        }
+    }
+
+    // ---------- complexes ----------
+
+    fun saveComplex(complex: Complex) = update { d ->
+        val exists = d.complexes.any { it.id == complex.id }
+        d.copy(complexes = if (exists) d.complexes.map { if (it.id == complex.id) complex else it } else d.complexes + complex)
+    }
+
+    fun deleteComplex(id: String) = update { d -> d.copy(complexes = d.complexes.filter { it.id != id }) }
+
+    // ---------- settings / import ----------
+
+    fun updateSettings(settings: Settings) = update { it.copy(settings = settings) }
+
+    fun addImported(exercises: List<Exercise>, complexes: List<Complex>) {
+        if (exercises.isEmpty() && complexes.isEmpty()) return
+        update { it.copy(exercises = it.exercises + exercises, complexes = it.complexes + complexes) }
+    }
+
+    // ---------- storage ----------
+
+    private fun update(transform: (AppData) -> AppData) {
+        val next = transform(_state.value)
+        _state.value = next
+        write(next)
+    }
+
+    private fun dataFile() = File(context.filesDir, "data.json")
+
+    private fun write(data: AppData) {
+        try {
+            val file = dataFile()
+            val tmp = File(file.parentFile, "data.json.tmp")
+            tmp.writeText(Codec.toJson(data).toString())
+            if (!tmp.renameTo(file)) {
+                file.delete()
+                tmp.renameTo(file)
+            }
+        } catch (e: Exception) {
+            // Keep running with in-memory data if the disk write fails.
+        }
+    }
+
+    private fun defaultExercises(): List<Exercise> = listOf(
+        "Burpees" to "jump",
+        "Jumping jacks" to "jacks",
+        "Lunges" to "lunge",
+        "Mountain climbers" to "run",
+        "Plank" to "plank",
+        "Push-ups" to "pushup",
+        "Sit-ups" to "abs",
+        "Squats" to "squat",
+    ).map { (name, icon) -> Exercise(newId(), name, icon) }
+}
+
+/** Internal storage format (with ids). The import/export format is in [ImportExport]. */
+object Codec {
+    fun toJson(d: AppData): JSONObject {
+        val exercises = JSONArray()
+        for (e in d.exercises) {
+            exercises.put(JSONObject().put("id", e.id).put("name", e.name).put("icon", e.icon))
+        }
+        val complexes = JSONArray()
+        for (c in d.complexes) {
+            val items = JSONArray()
+            for (item in c.items) {
+                when (item) {
+                    is ComplexItem.Single -> items.put(
+                        JSONObject().put("type", "single").put("ex", item.step.exerciseId).put("sec", item.step.seconds)
+                    )
+                    is ComplexItem.Cycle -> {
+                        val steps = JSONArray()
+                        for (s in item.steps) steps.put(JSONObject().put("ex", s.exerciseId).put("sec", s.seconds))
+                        items.put(JSONObject().put("type", "cycle").put("repeats", item.repeats).put("steps", steps))
+                    }
+                }
+            }
+            complexes.put(
+                JSONObject().put("id", c.id).put("name", c.name).put("rest", c.restSeconds).put("items", items)
+            )
+        }
+        val settings = JSONObject().put("beeps", d.settings.beeps).put("vibration", d.settings.vibration)
+        return JSONObject()
+            .put("version", 1)
+            .put("exercises", exercises)
+            .put("complexes", complexes)
+            .put("settings", settings)
+    }
+
+    fun fromJson(o: JSONObject): AppData {
+        val exercises = ArrayList<Exercise>()
+        val exArr = o.optJSONArray("exercises")
+        if (exArr != null) {
+            for (i in 0 until exArr.length()) {
+                val e = exArr.getJSONObject(i)
+                exercises += Exercise(e.getString("id"), e.getString("name"), e.optString("icon", ExerciseIcons.DEFAULT))
+            }
+        }
+        val complexes = ArrayList<Complex>()
+        val cxArr = o.optJSONArray("complexes")
+        if (cxArr != null) {
+            for (i in 0 until cxArr.length()) {
+                val c = cxArr.getJSONObject(i)
+                val items = ArrayList<ComplexItem>()
+                val itArr = c.optJSONArray("items") ?: JSONArray()
+                for (j in 0 until itArr.length()) {
+                    val it = itArr.getJSONObject(j)
+                    if (it.optString("type") == "cycle") {
+                        val steps = ArrayList<Step>()
+                        val stArr = it.optJSONArray("steps") ?: JSONArray()
+                        for (k in 0 until stArr.length()) {
+                            val s = stArr.getJSONObject(k)
+                            steps += Step(s.getString("ex"), s.getInt("sec"))
+                        }
+                        items += ComplexItem.Cycle(it.optInt("repeats", 1), steps)
+                    } else {
+                        items += ComplexItem.Single(Step(it.getString("ex"), it.getInt("sec")))
+                    }
+                }
+                complexes += Complex(c.getString("id"), c.getString("name"), c.optInt("rest", 15), items)
+            }
+        }
+        val s = o.optJSONObject("settings")
+        val settings = if (s != null) Settings(s.optBoolean("beeps", true), s.optBoolean("vibration", true)) else Settings()
+        return AppData(exercises, complexes, settings)
+    }
+}

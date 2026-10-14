@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="launcher_bg">#0F1113</color>
+
+    <style name="Theme.TrainingTimer" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/launcher_bg</item>
+        <item name="android:statusBarColor">#0F1113</item>
+        <item name="android:navigationBarColor">#15181B</item>
+    </style>
+</resources>
