@@ -242,6 +242,20 @@ private fun ImportSummary(outcome: ImportOutcome.Done) {
                 }
             }
         }
+        if (r.withoutIcon.isNotEmpty()) {
+            SummaryBlock(
+                icon = com.trainingtimer.app.data.ExerciseIcons.path(com.trainingtimer.app.data.ExerciseIcons.UNKNOWN),
+                iconColor = C.Lime,
+                title = if (r.withoutIcon.size == 1) "1 new exercise has a ? icon" else "${r.withoutIcon.size} new exercises have a ? icon",
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Open them on the Exercises tab to pick an icon.", fontSize = 13.sp, color = C.Muted)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        for (name in r.withoutIcon.take(30)) Chip(name)
+                    }
+                }
+            }
+        }
         if (r.skippedComplexes.isNotEmpty()) {
             SummaryBlock(
                 icon = UiIcons.SKIPPED,

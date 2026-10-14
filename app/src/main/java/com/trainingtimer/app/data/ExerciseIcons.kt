@@ -6,6 +6,9 @@ data class IconDef(val key: String, val label: String, val path: String)
 object ExerciseIcons {
     const val DEFAULT = "dumbbell"
 
+    /** Question mark, used for exercises created automatically on import. */
+    const val UNKNOWN = "unknown"
+
     val all: List<IconDef> = listOf(
         IconDef("plank", "Plank", "M3.5 11a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M7 12l12 3M9 13l-1 4M19 15v2M3 19h18"),
         IconDef("pushup", "Push-up", "M3.5 10a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M7 11l13 3M10 12v5M20 14v3M3 19h18"),
@@ -52,6 +55,7 @@ object ExerciseIcons {
         IconDef("catcow", "Cat–cow", "M2 21h20M5 21v-6M18 21v-6M5 15q6.5-7 13 0M1.5 13a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0"),
         IconDef("glutebridge", "Glute bridge", "M2 21h20M2.5 19a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M6 20l7-6h4l1 7M7 19.5l-1 1.5"),
         IconDef("pike", "Pike push-up", "M2 21h20M4 21l7-11M11 10l8 11M5.0 14.5a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M8 14.5l-2 6.5"),
+        IconDef("unknown", "Unknown", "M8.5 8.5a3.5 3.5 0 1 1 5 3.2c-1 .5-1.5 1.2-1.5 2.3v1M12 19h.01"),
         IconDef("abwheel", "Ab wheel", "M2 21h20M5 21l2-6 7-2 4 3M14.0 10.5a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M17.0 18.5a2.5 2.5 0 1 0 5.0 0a2.5 2.5 0 1 0 -5.0 0"),
     )
 
@@ -59,7 +63,7 @@ object ExerciseIcons {
 
     fun has(key: String): Boolean = byKey.containsKey(key)
 
-    fun path(key: String): String = (byKey[key] ?: byKey.getValue(DEFAULT)).path
+    fun path(key: String): String = (byKey[key] ?: byKey.getValue(UNKNOWN)).path
 }
 
 /** Interface icons in the same path format. */

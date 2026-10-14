@@ -10,6 +10,8 @@ data class ImportResult(
     val addedComplexes: List<String>,
     val skippedComplexes: List<String>,
     val errors: List<String>,
+    /** Exercises that were added with the "?" icon and need a real one. */
+    val withoutIcon: List<String> = emptyList(),
 )
 
 /**
@@ -125,7 +127,7 @@ object ImportExport {
                     continue
                 }
                 val catIds = catNames.map { categoryFor(it, null).id }.distinct()
-                val ex = Exercise(newId(), name, if (icon != null && ExerciseIcons.has(icon)) icon else ExerciseIcons.DEFAULT, catIds)
+                val ex = Exercise(newId(), name, if (icon != null && ExerciseIcons.has(icon)) icon else ExerciseIcons.UNKNOWN, catIds)
                 byName[key] = ex
                 added += ex
             }
@@ -151,17 +153,24 @@ object ImportExport {
                     continue
                 }
                 val rest = c.optInt("rest", 15).coerceIn(0, 3600)
+                // An exercise the complex needs but the library doesn't have is created with a "?" icon.
+                val create: (String) -> Exercise = { exName ->
+                    val ex = Exercise(newId(), exName, ExerciseIcons.UNKNOWN)
+                    byName[exName.lowercase()] = ex
+                    added += ex
+                    ex
+                }
                 val items = ArrayList<ComplexItem>()
                 val itArr = c.optJSONArray("items") ?: JSONArray()
                 for (j in 0 until itArr.length()) {
                     val it = itArr.optJSONObject(j) ?: continue
                     val cycle = it.optJSONObject("cycle")
                     if (cycle != null) {
-                        val steps = parseSteps(cycle.optJSONArray("items") ?: JSONArray(), name, byName, errors)
+                        val steps = parseSteps(cycle.optJSONArray("items") ?: JSONArray(), name, byName, errors, create)
                         val cycleRest = if (cycle.has("rest")) cycle.optInt("rest", 0).coerceIn(0, 3600) else null
                         if (steps.isNotEmpty()) items += ComplexItem.Cycle(cycle.optInt("repeats", 1).coerceIn(1, 99), steps, rest = cycleRest)
                     } else {
-                        val step = parseStep(it, name, byName, errors)
+                        val step = parseStep(it, name, byName, errors, create)
                         if (step != null) items += ComplexItem.Single(step)
                     }
                 }
@@ -181,6 +190,7 @@ object ImportExport {
             addedComplexes = addedComplexes.map { it.name },
             skippedComplexes = skippedComplexes,
             errors = errors,
+            withoutIcon = added.filter { it.icon == ExerciseIcons.UNKNOWN }.map { it.name },
         )
     }
 
@@ -189,23 +199,35 @@ object ImportExport {
         return if (v is String) v.trim() else ""
     }
 
-    private fun parseSteps(arr: JSONArray, complexName: String, byName: Map<String, Exercise>, errors: MutableList<String>): List<Step> {
+    private fun parseSteps(
+        arr: JSONArray,
+        complexName: String,
+        byName: Map<String, Exercise>,
+        errors: MutableList<String>,
+        create: (String) -> Exercise,
+    ): List<Step> {
         val out = ArrayList<Step>()
         for (k in 0 until arr.length()) {
             val o = arr.optJSONObject(k) ?: continue
-            val step = parseStep(o, complexName, byName, errors)
+            val step = parseStep(o, complexName, byName, errors, create)
             if (step != null) out += step
         }
         return out
     }
 
-    private fun parseStep(o: JSONObject, complexName: String, byName: Map<String, Exercise>, errors: MutableList<String>): Step? {
+    private fun parseStep(
+        o: JSONObject,
+        complexName: String,
+        byName: Map<String, Exercise>,
+        errors: MutableList<String>,
+        create: (String) -> Exercise,
+    ): Step? {
         val exName = stringOrEmpty(o, "exercise")
-        val ex = byName[exName.lowercase()]
-        if (ex == null) {
-            errors += "Complex \"$complexName\": unknown exercise \"$exName\""
+        if (exName.isEmpty()) {
+            errors += "Complex \"$complexName\": an exercise without a name was skipped"
             return null
         }
+        val ex = byName[exName.lowercase()] ?: create(exName)
         return Step(ex.id, o.optInt("time", 30).coerceIn(1, 3600))
     }
 
