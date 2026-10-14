@@ -52,6 +52,7 @@ object UiIcons {
     const val UPLOAD = "M12 15V3M7 8l5-5 5 5M5 21h14"
     const val BACKUP = "M4 7h16v13H4zM4 7l2-3h12l2 3M9 12h6"
     const val IMAGE = "M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9h.01"
+    const val GRIP = "M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01"
     const val LIST = "M4 5h16M4 12h16M4 19h10"
     const val DUMBBELL = "M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"
     const val SKIPPED = "M5 5l14 14M12 22a10 10 0 1 0 0-20a10 10 0 1 0 0 20"

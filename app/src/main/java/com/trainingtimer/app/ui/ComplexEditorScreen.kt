@@ -17,7 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -84,6 +85,12 @@ private class ComplexDraft(existing: Complex?) {
     fun remove(key: String) {
         val i = indexOf(key)
         if (i >= 0) items.removeAt(i)
+    }
+
+    fun moveIndex(from: Int, to: Int) {
+        if (from !in items.indices || to !in items.indices || from == to) return
+        val item = items.removeAt(from)
+        items.add(to, item)
     }
 
     fun move(key: String, delta: Int) {
@@ -205,7 +212,7 @@ private fun BuilderStep(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val listState = rememberLazyListState()
+    val scrollState = rememberScrollState()
     val exById = remember(data.exercises) { data.exercises.associateBy { it.id } }
     var nameError by remember { mutableStateOf(false) }
     var pickerForCycle by remember { mutableStateOf<String?>(null) }
@@ -230,7 +237,7 @@ private fun BuilderStep(
         val name = draft.name.trim()
         if (name.isEmpty()) {
             nameError = true
-            scope.launch { listState.animateScrollToItem(0) }
+            scope.launch { scrollState.animateScrollTo(0) }
             Toast.makeText(context, "Enter a name for the complex", Toast.LENGTH_SHORT).show()
             return
         }
@@ -255,105 +262,101 @@ private fun BuilderStep(
         )
         if (isNew) ProgressStrip(1f)
 
-        LazyColumn(
-            Modifier.weight(1f),
-            state = listState,
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp),
+        Column(
+            Modifier
+                .weight(1f)
+                .verticalScroll(scrollState)
+                .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item(key = "name") {
-                OutlinedTextField(
-                    value = draft.name,
-                    onValueChange = {
-                        draft.name = it
-                        nameError = false
-                    },
-                    label = { Text("Complex name") },
-                    singleLine = true,
-                    isError = nameError,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = C.Lime,
-                        focusedLabelColor = C.Lime,
-                        cursorColor = C.Lime,
-                        unfocusedBorderColor = C.Line,
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            item(key = "rest") {
-                Row(
-                    Modifier
-                        .padding(top = 8.dp)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(C.Surface)
-                        .padding(start = 16.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PathIcon(UiIcons.TIMER, C.Orange, size = 24.dp)
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("Rest between exercises", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = C.Text)
-                        Text("Not added after the last one", fontSize = 12.sp, color = C.Muted)
-                    }
-                    TimeStepper(draft.rest, { draft.rest = it }, min = 0, textColor = C.Orange, title = "Rest time")
+            OutlinedTextField(
+                value = draft.name,
+                onValueChange = {
+                    draft.name = it
+                    nameError = false
+                },
+                label = { Text("Complex name") },
+                singleLine = true,
+                isError = nameError,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = C.Lime,
+                    focusedLabelColor = C.Lime,
+                    cursorColor = C.Lime,
+                    unfocusedBorderColor = C.Line,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(
+                Modifier
+                    .padding(top = 8.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(C.Surface)
+                    .padding(start = 16.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PathIcon(UiIcons.TIMER, C.Orange, size = 24.dp)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Rest between exercises", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = C.Text)
+                    Text("Not added after the last one", fontSize = 12.sp, color = C.Muted)
                 }
+                TimeStepper(draft.rest, { draft.rest = it }, min = 0, textColor = C.Orange, title = "Rest time")
             }
-            item(key = "label") { SectionLabel("Sequence") }
+            SectionLabel("Sequence", trailing = if (draft.items.size > 1) "Hold ⠿ and drag to reorder" else null)
             if (draft.items.isEmpty()) {
-                item(key = "empty") { EmptyState("Nothing here yet", "Add exercises or a cycle below.") }
+                EmptyState("Nothing here yet", "Add exercises or a cycle below.")
             }
-            items(draft.items, key = { it.key }) { item ->
-                val index = draft.indexOf(item.key)
-                val moves = buildList<Pair<String, () -> Unit>> {
-                    if (index > 0) add("Move up" to { draft.move(item.key, -1) })
-                    if (index < draft.items.lastIndex) add("Move down" to { draft.move(item.key, 1) })
-                }
+            DraggableColumn(
+                items = draft.items,
+                keyOf = { it.key },
+                onMove = { from, to -> draft.moveIndex(from, to) },
+            ) { item, _, handle ->
                 when (item) {
                     is ComplexItem.Single -> SingleRow(
                         item = item,
                         exercise = exById[item.step.exerciseId],
+                        handle = handle,
                         onTime = { sec -> draft.replace(item.key, item.copy(step = item.step.copy(seconds = sec))) },
-                        menu = moves + ("Remove" to { draft.remove(item.key) }),
+                        onRemove = { draft.remove(item.key) },
                     )
                     is ComplexItem.Cycle -> CycleBlock(
                         cycle = item,
                         exById = exById,
+                        handle = handle,
                         onChange = { draft.replace(item.key, it) },
                         onAddExercises = { pickerForCycle = item.key },
-                        menu = moves + ("Remove cycle" to { draft.remove(item.key) }),
+                        onRemove = { draft.remove(item.key) },
                     )
                 }
             }
-            item(key = "add") {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    BigButton(
-                        text = "Exercise",
-                        onClick = { pickerForSingles = true },
-                        icon = UiIcons.PLUS,
-                        container = C.Surface,
-                        content = C.Text,
-                        height = 48.dp,
-                        fontSize = 14.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                    BigButton(
-                        text = "Cycle",
-                        onClick = { showCycleSheet = true },
-                        icon = UiIcons.REPEAT,
-                        container = C.Surface,
-                        content = C.Text,
-                        height = 48.dp,
-                        fontSize = 14.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                BigButton(
+                    text = "Exercise",
+                    onClick = { pickerForSingles = true },
+                    icon = UiIcons.PLUS,
+                    container = C.Surface,
+                    content = C.Text,
+                    height = 48.dp,
+                    fontSize = 14.sp,
+                    modifier = Modifier.weight(1f),
+                )
+                BigButton(
+                    text = "Cycle",
+                    onClick = { showCycleSheet = true },
+                    icon = UiIcons.REPEAT,
+                    container = C.Surface,
+                    content = C.Text,
+                    height = 48.dp,
+                    fontSize = 14.sp,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
 
@@ -420,17 +423,20 @@ private fun BuilderStep(
 private fun SingleRow(
     item: ComplexItem.Single,
     exercise: Exercise?,
+    handle: Modifier,
     onTime: (Int) -> Unit,
-    menu: List<Pair<String, () -> Unit>>,
+    onRemove: () -> Unit,
 ) {
     Row(
-        Modifier
+        handle
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(C.Surface)
-            .padding(start = 8.dp, end = 2.dp, top = 8.dp, bottom = 8.dp),
+            .padding(start = 2.dp, end = 2.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        PathIcon(UiIcons.GRIP, C.Faint, size = 20.dp, strokeWidth = 3f)
+        Spacer(Modifier.width(4.dp))
         ExerciseIcon(exercise?.icon ?: ExerciseIcons.DEFAULT, tileSize = 40.dp, iconSize = 22.dp)
         Spacer(Modifier.width(10.dp))
         Text(
@@ -441,8 +447,8 @@ private fun SingleRow(
             color = C.Text,
             lineHeight = 18.sp,
         )
-        TimeStepper(item.step.seconds, onTime, buttonWidth = 32.dp, title = exercise?.name ?: "Set time")
-        OverflowMenu("Item options", menu, size = 36.dp)
+        TimeStepper(item.step.seconds, onTime, buttonWidth = 30.dp, title = exercise?.name ?: "Set time")
+        RoundIconButton(UiIcons.CLOSE, "Remove", onRemove, size = 36.dp, tint = C.Muted, iconSize = 16.dp)
     }
 }
 
@@ -451,8 +457,9 @@ private fun CycleBlock(
     cycle: ComplexItem.Cycle,
     exById: Map<String, Exercise>,
     onChange: (ComplexItem.Cycle) -> Unit,
+    handle: Modifier,
     onAddExercises: () -> Unit,
-    menu: List<Pair<String, () -> Unit>>,
+    onRemove: () -> Unit,
 ) {
     val shape = RoundedCornerShape(20.dp)
     Column(
@@ -464,8 +471,9 @@ private fun CycleBlock(
             .padding(10.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Spacer(Modifier.width(4.dp))
+        Row(handle, verticalAlignment = Alignment.CenterVertically) {
+            PathIcon(UiIcons.GRIP, C.Faint, size = 20.dp, strokeWidth = 3f)
+            Spacer(Modifier.width(2.dp))
             PathIcon(UiIcons.REPEAT, C.Lime, size = 22.dp)
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
@@ -487,20 +495,30 @@ private fun CycleBlock(
                 minusLabel = "Fewer repeats",
                 plusLabel = "More repeats",
             )
-            OverflowMenu("Cycle options", menu, size = 36.dp)
+            OverflowMenu("Cycle options", listOf("Remove cycle" to onRemove), size = 36.dp)
         }
-        for (s in cycle.steps) {
+        DraggableColumn(
+            items = cycle.steps,
+            keyOf = { it.key },
+            onMove = { from, to ->
+                val steps = cycle.steps.toMutableList()
+                steps.add(to, steps.removeAt(from))
+                onChange(cycle.copy(steps = steps))
+            },
+        ) { s, _, stepHandle ->
             val ex = exById[s.exerciseId]
             Row(
-                Modifier
+                stepHandle
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(C.Surface)
-                    .padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(start = 2.dp, top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ExerciseIcon(ex?.icon ?: ExerciseIcons.DEFAULT, tileSize = 40.dp, iconSize = 22.dp)
-                Spacer(Modifier.width(10.dp))
+                PathIcon(UiIcons.GRIP, C.Faint, size = 18.dp, strokeWidth = 3f)
+                Spacer(Modifier.width(2.dp))
+                ExerciseIcon(ex?.icon ?: ExerciseIcons.DEFAULT, tileSize = 38.dp, iconSize = 22.dp)
+                Spacer(Modifier.width(8.dp))
                 Text(
                     ex?.name ?: "Deleted exercise",
                     Modifier.weight(1f),
@@ -512,14 +530,14 @@ private fun CycleBlock(
                 TimeStepper(
                     s.seconds,
                     { sec -> onChange(cycle.copy(steps = cycle.steps.map { if (it.key == s.key) it.copy(seconds = sec) else it })) },
-                    buttonWidth = 30.dp,
+                    buttonWidth = 28.dp,
                     title = ex?.name ?: "Set time",
                 )
                 RoundIconButton(
                     UiIcons.CLOSE,
                     "Remove from cycle",
                     { onChange(cycle.copy(steps = cycle.steps.filter { it.key != s.key })) },
-                    size = 36.dp,
+                    size = 34.dp,
                     tint = C.Muted,
                     iconSize = 16.dp,
                 )
