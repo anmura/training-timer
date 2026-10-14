@@ -42,6 +42,117 @@ object Repo {
         }
         installDefaultProgram()
         installAssetProgram("program_zaryadka_v1", "program_zaryadka.json")
+        installCategories()
+    }
+
+    /**
+     * Once per install: create Мобильность / Силовые / Растяжка and sort the known exercises into them.
+     * An exercise can land in more than one category; unknown exercises stay uncategorised.
+     */
+    private fun installCategories() {
+        val prefs = context.getSharedPreferences("app", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("categories_v1", false)) return
+        if (_state.value.categories.isEmpty()) {
+            val mobility = Category(newId(), "Мобильность", "#4ADE9B")
+            val strength = Category(newId(), "Силовые", "#FF9F43")
+            val stretch = Category(newId(), "Растяжка", "#C49BFF")
+            val m = mobility.id
+            val s = strength.id
+            val r = stretch.id
+            // Matched by the start of the (lower-case) exercise name.
+            val rules = listOf(
+                "наклоны и повороты головы" to listOf(m),
+                "круги" to listOf(m),
+                "кошка" to listOf(m, r),
+                "мобильные выпады" to listOf(m),
+                "скольжение по стене" to listOf(m),
+                "выкруты с резинкой" to listOf(m, r),
+                "тяга резинкой к лицу" to listOf(s, m),
+                "замок за спиной" to listOf(r, m),
+                "грудной отдел на опоре" to listOf(m, r),
+                "грудная у стены" to listOf(r),
+                "подтягивания" to listOf(s),
+                "брусья" to listOf(s),
+                "отжимания" to listOf(s),
+                "узкие отжимания" to listOf(s),
+                "пайк-отжимания" to listOf(s),
+                "приседания на одной ноге" to listOf(s),
+                "приседание на одной ноге" to listOf(s),
+                "приседание на двух ногах" to listOf(s),
+                "подъёмы ног" to listOf(s),
+                "сгибание запястий" to listOf(s),
+                "разгибание запястий" to listOf(s),
+                "наклоны грифа" to listOf(s),
+                "ягодичный мостик" to listOf(s),
+                "выкаты на ролике" to listOf(s),
+                "выпад на" to listOf(s),
+                "растяжка в выпаде" to listOf(r, m),
+                "выпад" to listOf(r),
+                "скручивание на" to listOf(r),
+                "колени к груди" to listOf(r),
+                "задняя поверхность бедра" to listOf(r),
+                "голубь" to listOf(r),
+                "бабочка" to listOf(r),
+                "предплечья" to listOf(r),
+                "burpees" to listOf(s),
+                "jumping jacks" to listOf(m),
+            )
+            update { d ->
+                d.copy(
+                    categories = listOf(mobility, strength, stretch),
+                    exercises = d.exercises.map { e ->
+                        val n = e.name.trim().lowercase()
+                        val match = rules.firstOrNull { n.startsWith(it.first) }?.second
+                        if (match == null) e else e.copy(categories = (e.categories + match).distinct())
+                    },
+                )
+            }
+        }
+        prefs.edit().putBoolean("categories_v1", true).apply()
+    }
+
+    // ---------- categories ----------
+
+    fun categoryNameExists(name: String, exceptId: String?): Boolean {
+        val n = name.trim().lowercase()
+        return _state.value.categories.any { it.id != exceptId && it.name.trim().lowercase() == n }
+    }
+
+    fun nextCategoryColor(): String {
+        val used = _state.value.categories.map { it.color }.toSet()
+        return CategoryColors.palette.firstOrNull { it !in used }
+            ?: CategoryColors.palette[_state.value.categories.size % CategoryColors.palette.size]
+    }
+
+    fun addCategory(name: String, color: String): Category {
+        val c = Category(newId(), name.trim(), color)
+        update { it.copy(categories = it.categories + c) }
+        return c
+    }
+
+    fun renameCategory(id: String, name: String) = update { d ->
+        d.copy(categories = d.categories.map { if (it.id == id) it.copy(name = name.trim()) else it })
+    }
+
+    fun setCategoryColor(id: String, color: String) = update { d ->
+        d.copy(categories = d.categories.map { if (it.id == id) it.copy(color = color) else it })
+    }
+
+    fun deleteCategory(id: String) = update { d ->
+        d.copy(
+            categories = d.categories.filter { it.id != id },
+            exercises = d.exercises.map { e -> if (id in e.categories) e.copy(categories = e.categories - id) else e },
+        )
+    }
+
+    fun moveCategory(from: Int, to: Int) = update { d ->
+        if (from !in d.categories.indices || to !in d.categories.indices) {
+            d
+        } else {
+            val list = d.categories.toMutableList()
+            list.add(to, list.removeAt(from))
+            d.copy(categories = list)
+        }
     }
 
     /**
@@ -161,9 +272,15 @@ object Repo {
 
     fun updateSettings(settings: Settings) = update { it.copy(settings = settings) }
 
-    fun addImported(exercises: List<Exercise>, complexes: List<Complex>) {
-        if (exercises.isEmpty() && complexes.isEmpty()) return
-        update { it.copy(exercises = it.exercises + exercises, complexes = it.complexes + complexes) }
+    fun addImported(exercises: List<Exercise>, complexes: List<Complex>, categories: List<Category> = emptyList()) {
+        if (exercises.isEmpty() && complexes.isEmpty() && categories.isEmpty()) return
+        update {
+            it.copy(
+                exercises = it.exercises + exercises,
+                complexes = it.complexes + complexes,
+                categories = it.categories + categories,
+            )
+        }
     }
 
     // ---------- storage ----------
@@ -196,7 +313,13 @@ object Codec {
     fun toJson(d: AppData): JSONObject {
         val exercises = JSONArray()
         for (e in d.exercises) {
-            exercises.put(JSONObject().put("id", e.id).put("name", e.name).put("icon", e.icon))
+            val cats = JSONArray()
+            for (id in e.categories) cats.put(id)
+            exercises.put(JSONObject().put("id", e.id).put("name", e.name).put("icon", e.icon).put("cats", cats))
+        }
+        val categories = JSONArray()
+        for (c in d.categories) {
+            categories.put(JSONObject().put("id", c.id).put("name", c.name).put("color", c.color))
         }
         val complexes = JSONArray()
         for (c in d.complexes) {
@@ -225,6 +348,7 @@ object Codec {
             .put("exercises", exercises)
             .put("complexes", complexes)
             .put("settings", settings)
+            .put("categories", categories)
     }
 
     fun fromJson(o: JSONObject): AppData {
@@ -233,7 +357,10 @@ object Codec {
         if (exArr != null) {
             for (i in 0 until exArr.length()) {
                 val e = exArr.getJSONObject(i)
-                exercises += Exercise(e.getString("id"), e.getString("name"), e.optString("icon", ExerciseIcons.DEFAULT))
+                val catArr = e.optJSONArray("cats")
+                val cats = ArrayList<String>()
+                if (catArr != null) for (k in 0 until catArr.length()) cats += catArr.getString(k)
+                exercises += Exercise(e.getString("id"), e.getString("name"), e.optString("icon", ExerciseIcons.DEFAULT), cats)
             }
         }
         val complexes = ArrayList<Complex>()
@@ -263,6 +390,16 @@ object Codec {
         }
         val s = o.optJSONObject("settings")
         val settings = if (s != null) Settings(s.optBoolean("beeps", true), s.optBoolean("vibration", true)) else Settings()
-        return AppData(exercises, complexes, settings)
+        val categories = ArrayList<Category>()
+        val caArr = o.optJSONArray("categories")
+        if (caArr != null) {
+            for (i in 0 until caArr.length()) {
+                val c = caArr.getJSONObject(i)
+                categories += Category(c.getString("id"), c.getString("name"), c.optString("color", "#4ADE9B"))
+            }
+        }
+        val known = categories.map { it.id }.toSet()
+        val cleaned = exercises.map { e -> e.copy(categories = e.categories.filter { it in known }) }
+        return AppData(cleaned, complexes, settings, categories)
     }
 }

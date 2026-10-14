@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.trainingtimer.app.data.AppData
+import com.trainingtimer.app.data.Category
 import com.trainingtimer.app.data.Complex
 import com.trainingtimer.app.data.Exercise
 import com.trainingtimer.app.data.ImportExport
@@ -347,59 +348,117 @@ private fun ExercisesTab(
     onImportExport: () -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
+    var filter by rememberSaveable { mutableStateOf<String?>(null) }
     var toDelete by remember { mutableStateOf<Exercise?>(null) }
-    val list = remember(data.exercises, query) {
+    var manageCategories by remember { mutableStateOf(false) }
+    // A deleted category can't stay selected.
+    val activeFilter = filter?.takeIf { f -> f == NO_CATEGORY || data.categories.any { it.id == f } }
+    val searched = remember(data.exercises, query) {
         val q = query.trim()
         data.exercises
             .filter { q.isEmpty() || it.name.contains(q, ignoreCase = true) }
             .sortedBy { it.name.lowercase() }
     }
+    val list = searched.inCategory(activeFilter)
+    // "All" with categories: one group per category (an exercise can appear in several), then the uncategorised ones.
+    val groups: List<Pair<Category?, List<Exercise>>> = if (activeFilter == null && data.categories.isNotEmpty()) {
+        data.categories.map { c -> c to list.filter { c.id in it.categories } }.filter { it.second.isNotEmpty() } +
+            listOf<Pair<Category?, List<Exercise>>>(null to list.filter { it.categories.isEmpty() }).filter { it.second.isNotEmpty() }
+    } else {
+        listOf(null to list)
+    }
+    val grouped = activeFilter == null && data.categories.isNotEmpty()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 100.dp),
+        contentPadding = PaddingValues(bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        item {
-            TabHeader(
-                if (data.exercises.size == 1) "1 exercise" else "${data.exercises.size} exercises",
-                "Exercises",
-            ) {
-                PillButton("Import", UiIcons.IMPORT_EXPORT, onImportExport)
-            }
-        }
-        item {
-            SearchField(query, onChange = { query = it })
-            Spacer(Modifier.height(8.dp))
-        }
-        if (list.isEmpty()) {
-            item {
-                if (data.exercises.isEmpty()) {
-                    EmptyState("No exercises yet", "Tap + to add one, or import them from a file.")
-                } else {
-                    EmptyState("Nothing found", "No exercise matches “${query.trim()}”.")
+        item(key = "header") {
+            Box(Modifier.padding(horizontal = 16.dp)) {
+                TabHeader(
+                    if (data.exercises.size == 1) "1 exercise" else "${data.exercises.size} exercises",
+                    "Exercises",
+                ) {
+                    PillButton("Import", UiIcons.IMPORT_EXPORT, onImportExport)
                 }
             }
         }
-        items(list, key = { it.id }) { e ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 64.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable { onEdit(e.id) }
-                    .padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ExerciseIcon(e.icon, tileSize = 48.dp, iconSize = 26.dp, tile = C.Surface, corner = 14.dp)
-                Spacer(Modifier.width(14.dp))
-                Text(e.name, Modifier.weight(1f), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = C.Text)
-                OverflowMenu(
-                    "Exercise options",
-                    listOf("Edit" to { onEdit(e.id) }, "Delete" to { toDelete = e }),
-                    size = 44.dp,
-                )
+        item(key = "search") {
+            Box(Modifier.padding(horizontal = 16.dp)) {
+                SearchField(query, onChange = { query = it })
+            }
+            Spacer(Modifier.height(12.dp))
+        }
+        item(key = "filters") {
+            CategoryFilterRow(
+                categories = data.categories,
+                exercises = searched,
+                selected = activeFilter,
+                onSelect = { filter = it },
+                onManage = { manageCategories = true },
+            )
+            Spacer(Modifier.height(6.dp))
+        }
+        if (list.isEmpty()) {
+            item(key = "empty") {
+                when {
+                    data.exercises.isEmpty() -> EmptyState("No exercises yet", "Tap + to add one, or import them from a file.")
+                    query.isNotBlank() -> EmptyState("Nothing found", "No exercise matches “${query.trim()}”.")
+                    else -> EmptyState("Nothing here", "No exercises in this category yet.")
+                }
             }
         }
+        for ((cat, exercises) in groups) {
+            val groupKey = cat?.id ?: NO_CATEGORY
+            if (grouped) {
+                item(key = "h-$groupKey") {
+                    Row(
+                        Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        ColorDot(if (cat != null) categoryColor(cat.color) else C.Faint, 10.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            (cat?.name ?: "No category").uppercase(),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.sp,
+                            color = C.Muted,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("${exercises.size}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = C.Faint)
+                    }
+                }
+            }
+            items(exercises, key = { "$groupKey-${it.id}" }) { e ->
+                Row(
+                    Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth()
+                        .heightIn(min = 64.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable { onEdit(e.id) }
+                        .padding(start = 4.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ExerciseIcon(e.icon, tileSize = 48.dp, iconSize = 26.dp, tile = C.Surface, corner = 14.dp)
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(e.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = C.Text)
+                        // In grouped view the group already says it; show the line only for extra categories or filtered views.
+                        if (!grouped || e.categories.size > 1) CategoryLine(e, data.categories)
+                    }
+                    OverflowMenu(
+                        "Exercise options",
+                        listOf("Edit" to { onEdit(e.id) }, "Delete" to { toDelete = e }),
+                        size = 44.dp,
+                    )
+                }
+            }
+        }
+    }
+    if (manageCategories) {
+        CategoryManagerSheet(data, onDismiss = { manageCategories = false })
     }
     toDelete?.let { e ->
         val used = Repo.usageCount(e.id)

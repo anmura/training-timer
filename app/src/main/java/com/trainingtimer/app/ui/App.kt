@@ -70,6 +70,7 @@ fun App(onStartWorkout: (Complex) -> Unit) {
             is Screen.ExerciseEditor -> key(top) {
                 ExerciseEditorScreen(
                     existing = data.exercises.find { it.id == top.id },
+                    categories = data.categories,
                     onClose = { pop() },
                 )
             }

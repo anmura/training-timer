@@ -16,7 +16,8 @@ data class ImportResult(
  * File format (JSON):
  * {
  *   "version": 1,
- *   "exercises": [ { "name": "Burpees", "icon": "jump" }, ... ],
+ *   "categories": [ { "name": "Растяжка", "color": "#C49BFF" } ],            (optional)
+ *   "exercises": [ { "name": "Burpees", "icon": "jump", "categories": ["Силовые"] }, ... ],
  *   "complexes": [ { "name": "Morning HIIT", "rest": 15, "items": [
  *       { "exercise": "Burpees", "time": 30 },
  *       { "cycle": { "repeats": 3, "items": [ { "exercise": "Plank", "time": 45 } ] } } ] } ]
@@ -60,16 +61,54 @@ object ImportExport {
         val skipped = ArrayList<String>()
         val errors = ArrayList<String>()
 
+        // Categories: match by name, create the ones that don't exist yet.
+        val catByName = HashMap<String, Category>()
+        for (c in data.categories) catByName[c.name.trim().lowercase()] = c
+        val newCategories = ArrayList<Category>()
+        val usedColors = data.categories.map { it.color }.toMutableSet()
+        fun categoryFor(name: String, color: String?): Category {
+            val key = name.trim().lowercase()
+            catByName[key]?.let { return it }
+            val chosen = color?.takeIf { it.matches(Regex("#[0-9A-Fa-f]{6}")) }
+                ?: CategoryColors.palette.firstOrNull { it !in usedColors }
+                ?: CategoryColors.palette[(data.categories.size + newCategories.size) % CategoryColors.palette.size]
+            usedColors += chosen
+            val c = Category(newId(), name.trim(), chosen)
+            catByName[key] = c
+            newCategories += c
+            return c
+        }
+        if (root is JSONObject) {
+            val caArr = root.optJSONArray("categories")
+            if (caArr != null) {
+                for (i in 0 until caArr.length()) {
+                    val c = caArr.opt(i)
+                    when (c) {
+                        is String -> if (c.isNotBlank()) categoryFor(c, null)
+                        is JSONObject -> {
+                            val n = stringOrEmpty(c, "name")
+                            if (n.isNotEmpty()) categoryFor(n, stringOrEmpty(c, "color").ifEmpty { null })
+                        }
+                    }
+                }
+            }
+        }
+
         if (exArr != null) {
             for (i in 0 until exArr.length()) {
                 val entry = exArr.opt(i)
                 val name: String
                 var icon: String? = null
+                var catNames: List<String> = emptyList()
                 when (entry) {
                     is String -> name = entry.trim()
                     is JSONObject -> {
                         name = stringOrEmpty(entry, "name")
                         icon = stringOrEmpty(entry, "icon").lowercase().ifEmpty { null }
+                        val ca = entry.optJSONArray("categories")
+                        if (ca != null) {
+                            catNames = (0 until ca.length()).mapNotNull { k -> (ca.opt(k) as? String)?.trim()?.ifEmpty { null } }
+                        }
                     }
                     else -> {
                         errors += "Exercise #${i + 1}: not a valid entry"
@@ -85,7 +124,8 @@ object ImportExport {
                     if (!skipped.any { it.equals(name, ignoreCase = true) }) skipped += name
                     continue
                 }
-                val ex = Exercise(newId(), name, if (icon != null && ExerciseIcons.has(icon)) icon else ExerciseIcons.DEFAULT)
+                val catIds = catNames.map { categoryFor(it, null).id }.distinct()
+                val ex = Exercise(newId(), name, if (icon != null && ExerciseIcons.has(icon)) icon else ExerciseIcons.DEFAULT, catIds)
                 byName[key] = ex
                 added += ex
             }
@@ -134,7 +174,7 @@ object ImportExport {
             }
         }
 
-        Repo.addImported(added, addedComplexes)
+        Repo.addImported(added, addedComplexes, newCategories)
         return ImportResult(
             addedExercises = added.map { it.name },
             skippedExercises = skipped,
@@ -170,7 +210,13 @@ object ImportExport {
     }
 
     fun exportExercises(d: AppData): String =
-        JSONObject().put("version", 1).put("exercises", exercisesJson(d)).toString(2)
+        JSONObject().put("version", 1).put("categories", categoriesJson(d)).put("exercises", exercisesJson(d)).toString(2)
+
+    private fun categoriesJson(d: AppData): JSONArray {
+        val arr = JSONArray()
+        for (c in d.categories) arr.put(JSONObject().put("name", c.name).put("color", c.color))
+        return arr
+    }
 
     fun exportBackup(d: AppData): String {
         val byId = d.exercises.associateBy { it.id }
@@ -193,6 +239,7 @@ object ImportExport {
         }
         return JSONObject()
             .put("version", 1)
+            .put("categories", categoriesJson(d))
             .put("exercises", exercisesJson(d))
             .put("complexes", complexes)
             .toString(2)
@@ -205,6 +252,12 @@ object ImportExport {
         for (e in d.exercises.sortedBy { it.name.lowercase() }) {
             val o = JSONObject().put("name", e.name)
             if (!e.icon.startsWith("img:")) o.put("icon", e.icon)
+            val names = e.categories.mapNotNull { id -> d.categories.find { it.id == id }?.name }
+            if (names.isNotEmpty()) {
+                val ca = JSONArray()
+                for (n in names) ca.put(n)
+                o.put("categories", ca)
+            }
             arr.put(o)
         }
         return arr

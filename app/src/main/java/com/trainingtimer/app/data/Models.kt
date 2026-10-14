@@ -4,8 +4,18 @@ import java.util.UUID
 
 fun newId(): String = UUID.randomUUID().toString()
 
-/** icon is either a built-in icon key (see [ExerciseIcons]) or "img:<file name>" for a picture from the gallery. */
-data class Exercise(val id: String, val name: String, val icon: String)
+/**
+ * icon is either a built-in icon key (see [ExerciseIcons]) or "img:<file name>" for a picture from the gallery.
+ * [categories] holds category ids; an exercise can be in several categories or none.
+ */
+data class Exercise(val id: String, val name: String, val icon: String, val categories: List<String> = emptyList())
+
+/** [color] is "#RRGGBB". */
+data class Category(val id: String, val name: String, val color: String)
+
+object CategoryColors {
+    val palette = listOf("#4ADE9B", "#FF9F43", "#C49BFF", "#5EC2FF", "#FF7A9C", "#FFD54A", "#7FE0D6")
+}
 
 data class Step(val exerciseId: String, val seconds: Int, val key: String = newId())
 
@@ -39,6 +49,7 @@ data class AppData(
     val exercises: List<Exercise> = emptyList(),
     val complexes: List<Complex> = emptyList(),
     val settings: Settings = Settings(),
+    val categories: List<Category> = emptyList(),
 )
 
 /** Exercise ids in the order they are performed within one pass (cycles counted once). */

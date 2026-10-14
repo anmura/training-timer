@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.trainingtimer.app.data.AppData
+import com.trainingtimer.app.data.Category
 import com.trainingtimer.app.data.Complex
 import com.trainingtimer.app.data.ComplexItem
 import com.trainingtimer.app.data.Exercise
@@ -128,6 +129,7 @@ fun ComplexEditorScreen(existing: Complex?, data: AppData, onClose: () -> Unit) 
     if (step == 1) {
         SelectExercisesStep(
             exercises = data.exercises,
+            categories = data.categories,
             selected = draft.selected,
             onBack = onClose,
             onNext = {
@@ -165,12 +167,15 @@ fun ComplexEditorScreen(existing: Complex?, data: AppData, onClose: () -> Unit) 
 @Composable
 private fun SelectExercisesStep(
     exercises: List<Exercise>,
+    categories: List<Category>,
     selected: SnapshotStateList<String>,
     onBack: () -> Unit,
     onNext: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
     val sorted = remember(exercises) { exercises.sortedBy { it.name.lowercase() } }
+    var catFilter by remember { mutableStateOf<String?>(null) }
+    val shown = sorted.inCategory(catFilter)
     Column(
         Modifier
             .fillMaxSize()
@@ -184,6 +189,7 @@ private fun SelectExercisesStep(
             color = C.Muted,
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp),
         )
+        CategoryFilterRow(categories, sorted, catFilter, { catFilter = it }, Modifier.padding(bottom = 8.dp))
         if (sorted.isEmpty()) {
             EmptyState("Your library is empty", "Add exercises on the Exercises tab first.", Modifier.weight(1f))
         } else {
@@ -192,7 +198,7 @@ private fun SelectExercisesStep(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(sorted, key = { it.id }) { e ->
+                items(shown, key = { it.id }) { e ->
                     val order = selected.indexOf(e.id)
                     CheckRow(
                         exercise = e,
@@ -401,6 +407,7 @@ private fun BuilderStep(
         ExercisePickerSheet(
             title = "Add exercises",
             exercises = data.exercises,
+            categories = data.categories,
             onDismiss = { pickerForSingles = false },
             onAdd = { ids ->
                 for (id in ids) draft.items.add(ComplexItem.Single(Step(id, DEFAULT_SECONDS)))
@@ -412,6 +419,7 @@ private fun BuilderStep(
         ExercisePickerSheet(
             title = "Add to cycle",
             exercises = data.exercises,
+            categories = data.categories,
             onDismiss = { pickerForCycle = null },
             onAdd = { ids ->
                 val i = draft.indexOf(cycleKey)
@@ -426,6 +434,7 @@ private fun BuilderStep(
     if (showCycleSheet) {
         AddCycleSheet(
             exercises = data.exercises,
+            categories = data.categories,
             onDismiss = { showCycleSheet = false },
             onAdd = { repeats, steps ->
                 draft.items.add(ComplexItem.Cycle(repeats, steps))
@@ -631,12 +640,15 @@ private fun CycleBlock(
 private fun ExercisePickerSheet(
     title: String,
     exercises: List<Exercise>,
+    categories: List<Category>,
     onDismiss: () -> Unit,
     onAdd: (List<String>) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val selected = remember { mutableStateListOf<String>() }
     val sorted = remember(exercises) { exercises.sortedBy { it.name.lowercase() } }
+    var catFilter by remember { mutableStateOf<String?>(null) }
+    val shown = sorted.inCategory(catFilter)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = C.Surface) {
         Column(
             Modifier
@@ -645,11 +657,12 @@ private fun ExercisePickerSheet(
         ) {
             Text(title, fontFamily = Condensed, fontSize = 30.sp, color = C.Text)
             Spacer(Modifier.height(12.dp))
+            CategoryFilterRow(categories, sorted, catFilter, { catFilter = it }, Modifier.padding(bottom = 10.dp), horizontalPadding = 0.dp)
             LazyColumn(
                 Modifier.weight(1f, fill = false),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(sorted, key = { it.id }) { e ->
+                items(shown, key = { it.id }) { e ->
                     CheckRow(
                         exercise = e,
                         checked = e.id in selected,
@@ -673,6 +686,7 @@ private fun ExercisePickerSheet(
 @Composable
 private fun AddCycleSheet(
     exercises: List<Exercise>,
+    categories: List<Category>,
     onDismiss: () -> Unit,
     onAdd: (Int, List<Step>) -> Unit,
 ) {
@@ -681,6 +695,8 @@ private fun AddCycleSheet(
     val order = remember { mutableStateListOf<String>() }
     val times = remember { mutableStateMapOf<String, Int>() }
     val sorted = remember(exercises) { exercises.sortedBy { it.name.lowercase() } }
+    var catFilter by remember { mutableStateOf<String?>(null) }
+    val shown = sorted.inCategory(catFilter)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = C.Surface) {
         Column(
             Modifier
@@ -715,11 +731,12 @@ private fun AddCycleSheet(
                 )
             }
             SectionLabel("Exercises in cycle", Modifier.padding(top = 8.dp, bottom = 6.dp), trailing = "Time per round")
+            CategoryFilterRow(categories, sorted, catFilter, { catFilter = it }, Modifier.padding(bottom = 8.dp), horizontalPadding = 0.dp)
             LazyColumn(
                 Modifier.weight(1f, fill = false),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(sorted, key = { it.id }) { e ->
+                items(shown, key = { it.id }) { e ->
                     val on = e.id in order
                     CheckRow(
                         exercise = e,

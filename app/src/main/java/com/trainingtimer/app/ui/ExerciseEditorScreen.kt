@@ -7,6 +7,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import com.trainingtimer.app.data.Category
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -46,11 +54,14 @@ import com.trainingtimer.app.data.Repo
 import com.trainingtimer.app.data.UiIcons
 import com.trainingtimer.app.data.newId
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ExerciseEditorScreen(existing: Exercise?, onClose: () -> Unit) {
+fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClose: () -> Unit) {
     val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf(existing?.name ?: "") }
     var icon by rememberSaveable { mutableStateOf(existing?.icon ?: "plank") }
+    var selectedCats by remember { mutableStateOf(existing?.categories ?: emptyList()) }
+    var newCategory by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -70,7 +81,7 @@ fun ExerciseEditorScreen(existing: Exercise?, onClose: () -> Unit) {
             n.isEmpty() -> error = "Enter a name"
             Repo.nameExists(n, existing?.id) -> error = "An exercise with this name already exists"
             else -> {
-                Repo.saveExercise(Exercise(existing?.id ?: newId(), n, icon))
+                Repo.saveExercise(Exercise(existing?.id ?: newId(), n, icon, selectedCats.filter { id -> categories.any { it.id == id } }))
                 onClose()
             }
         }
@@ -123,6 +134,31 @@ fun ExerciseEditorScreen(existing: Exercise?, onClose: () -> Unit) {
                 ),
                 modifier = Modifier.fillMaxWidth(),
             )
+            Text("Categories", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = C.Muted)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (c in categories) {
+                    val on = c.id in selectedCats
+                    FilterChip(
+                        c.name,
+                        on,
+                        { selectedCats = if (on) selectedCats - c.id else selectedCats + c.id },
+                        color = categoryColor(c.color),
+                    )
+                }
+                Row(
+                    Modifier
+                        .height(36.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .border(1.5.dp, C.LimeBorder, RoundedCornerShape(18.dp))
+                        .clickable(role = Role.Button) { newCategory = true }
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PathIcon(UiIcons.PLUS, C.Lime, size = 16.dp, strokeWidth = 2.6f)
+                    Spacer(Modifier.width(6.dp))
+                    Text("New category", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = C.Lime)
+                }
+            }
             Text("Icon", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = C.Muted)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(5),
@@ -182,5 +218,19 @@ fun ExerciseEditorScreen(existing: Exercise?, onClose: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+    if (newCategory) {
+        CategoryNameDialog(
+            title = "New category",
+            initial = "",
+            confirmLabel = "Add",
+            exceptId = null,
+            onDismiss = { newCategory = false },
+            onConfirm = { name ->
+                val c = Repo.addCategory(name, Repo.nextCategoryColor())
+                selectedCats = selectedCats + c.id
+                newCategory = false
+            },
+        )
     }
 }
