@@ -5,6 +5,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import com.trainingtimer.app.data.Category
@@ -21,9 +23,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -101,7 +100,8 @@ fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClos
         Column(
             Modifier
                 .weight(1f)
-                .padding(horizontal = 20.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(start = 20.dp, end = 20.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Box(Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.Center) {
@@ -160,17 +160,13 @@ fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClos
                 }
             }
             Text("Icon", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = C.Muted)
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(5),
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
+            // A plain (non-lazy) grid so the whole page scrolls together.
+            val tiles = buildList<@Composable () -> Unit> {
                 if (icon.startsWith("img:")) {
-                    item {
+                    add {
                         Box(
                             Modifier
-                                .aspectRatio(1f)
+                                .fillMaxSize()
                                 .border(2.dp, C.Lime, RoundedCornerShape(16.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -178,24 +174,26 @@ fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClos
                         }
                     }
                 }
-                items(ExerciseIcons.all, key = { it.key }) { def ->
-                    val selected = icon == def.key
-                    Box(
-                        Modifier
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(if (selected) C.Lime else C.Surface)
-                            .selectable(selected = selected, role = Role.RadioButton, onClick = { icon = def.key })
-                            .semantics { contentDescription = def.label },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        PathIcon(def.path, if (selected) C.OnLime else C.Lime, size = 28.dp, strokeWidth = 1.7f)
+                for (def in ExerciseIcons.all.filter { it.key != ExerciseIcons.UNKNOWN }) {
+                    add {
+                        val selected = icon == def.key
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (selected) C.Lime else C.Surface)
+                                .selectable(selected = selected, role = Role.RadioButton, onClick = { icon = def.key })
+                                .semantics { contentDescription = def.label },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            PathIcon(def.path, if (selected) C.OnLime else C.Lime, size = 28.dp, strokeWidth = 1.7f)
+                        }
                     }
                 }
-                item {
+                add {
                     Box(
                         Modifier
-                            .aspectRatio(1f)
+                            .fillMaxSize()
                             .clip(RoundedCornerShape(16.dp))
                             .border(1.5.dp, C.Faint, RoundedCornerShape(16.dp))
                             .background(Color.Transparent)
@@ -206,6 +204,16 @@ fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClos
                         contentAlignment = Alignment.Center,
                     ) {
                         PathIcon(UiIcons.IMAGE, C.Muted, size = 26.dp, strokeWidth = 1.8f)
+                    }
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                for (row in tiles.chunked(5)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        for (tile in row) {
+                            Box(Modifier.weight(1f).aspectRatio(1f)) { tile() }
+                        }
+                        repeat(5 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }

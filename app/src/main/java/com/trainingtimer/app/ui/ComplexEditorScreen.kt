@@ -322,10 +322,7 @@ private fun BuilderStep(
             ) {
                 PathIcon(UiIcons.TIMER, C.Orange, size = 24.dp)
                 Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("Rest between exercises", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = C.Text)
-                    Text("Not added after the last one", fontSize = 12.sp, color = C.Muted)
-                }
+                Text("Rest between exercises", Modifier.weight(1f), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = C.Text)
                 TimeStepper(draft.rest, { draft.rest = it }, min = 0, textColor = C.Orange, title = "Rest time")
             }
             SectionLabel("Sequence", trailing = if (draft.items.size > 1) "Hold ⠿ and drag to reorder" else null)

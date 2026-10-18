@@ -1,0 +1,257 @@
+{
+  "version": 1,
+  "exercises": [
+    {
+      "name": "Выпад вперёд, правая нога",
+      "icon": "lunge",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Выпад вперёд, левая нога",
+      "icon": "lunge",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Выпад влево",
+      "icon": "sidelunge",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Выпад вправо",
+      "icon": "sidelunge",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Голубь, правая нога",
+      "icon": "pigeon",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Голубь, левая нога",
+      "icon": "pigeon",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Складка",
+      "icon": "forwardfold",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Правая лопатка",
+      "icon": "scapula",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Левая лопатка",
+      "icon": "scapula",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Кобра",
+      "icon": "cobra",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Маятник вперёд",
+      "icon": "legswing",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Наклон к правой ноге",
+      "icon": "legreach",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Наклон к левой ноге",
+      "icon": "legreach",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Наклон в правый бок",
+      "icon": "sidebend",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Наклон в левый бок",
+      "icon": "sidebend",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Правая икра",
+      "icon": "calf",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Левая икра",
+      "icon": "calf",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Правое бедро",
+      "icon": "quad",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Левое бедро",
+      "icon": "quad",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Два бедра лёжа",
+      "icon": "lyingquad",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Правая рука об стену",
+      "icon": "chestwall",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Левая рука об стену",
+      "icon": "chestwall",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Замок, правая рука сверху",
+      "icon": "handslock",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Замок, левая рука сверху",
+      "icon": "handslock",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Предплечья",
+      "icon": "forearm",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Шея вправо",
+      "icon": "neckside",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Шея влево",
+      "icon": "neckside",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Шея вперёд",
+      "icon": "neckforward",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Грудно-ключичная, правая",
+      "icon": "scm",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Грудно-ключичная, левая",
+      "icon": "scm",
+      "categories": [
+        "Растяжка"
+      ]
+    },
+    {
+      "name": "Сгибание запястий ладонями вверх",
+      "icon": "wristcurl",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Разгибание запястий ладонями вниз",
+      "icon": "wristext",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Наклон грифа вперёд",
+      "icon": "bartiltfwd",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Наклон грифа назад, хват «молоток»",
+      "icon": "bartiltback",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Поворот грифа влево-вправо",
+      "icon": "barrotate",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Перекат гантели на кончики пальцев",
+      "icon": "fingerroll",
+      "categories": [
+        "Силовые"
+      ]
+    }
+  ]
+}

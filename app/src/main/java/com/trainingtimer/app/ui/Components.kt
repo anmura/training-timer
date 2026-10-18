@@ -73,6 +73,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -605,6 +606,62 @@ fun CheckRow(
             onCheckedChange = null,
             colors = CheckboxDefaults.colors(checkedColor = C.Lime, checkmarkColor = C.OnLime, uncheckedColor = C.Muted),
             modifier = Modifier.padding(horizontal = 8.dp),
+        )
+    }
+}
+
+/**
+ * Text that shrinks its font until no single word has to be broken across lines and it fits in [maxLines].
+ * Long Russian words like "Кошка–корова" stay whole instead of splitting mid-word.
+ */
+@Composable
+fun FitText(
+    text: String,
+    maxFontSize: TextUnit,
+    modifier: Modifier = Modifier,
+    minFontSize: TextUnit = 16.sp,
+    maxLines: Int = 2,
+    color: Color = C.Text,
+    fontFamily: androidx.compose.ui.text.font.FontFamily? = null,
+    fontWeight: FontWeight? = null,
+    textAlign: TextAlign? = null,
+) {
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
+        val widthPx = constraints.maxWidth
+        val size = remember(text, widthPx, maxFontSize, minFontSize, maxLines) {
+            var s = maxFontSize.value
+            val words = text.split(' ', '\n').filter { it.isNotEmpty() }
+            while (s > minFontSize.value) {
+                val style = androidx.compose.ui.text.TextStyle(
+                    fontSize = s.sp,
+                    lineHeight = (s * 1.12f).sp,
+                    fontFamily = fontFamily,
+                    fontWeight = fontWeight,
+                )
+                val widest = words.maxOfOrNull { w -> measurer.measure(w, style, maxLines = 1, softWrap = false).size.width } ?: 0
+                if (widest <= widthPx) {
+                    val full = measurer.measure(
+                        text,
+                        style,
+                        constraints = androidx.compose.ui.unit.Constraints(maxWidth = widthPx.coerceAtLeast(1)),
+                    )
+                    if (full.lineCount <= maxLines) break
+                }
+                s -= 2f
+            }
+            s.coerceAtLeast(minFontSize.value)
+        }
+        Text(
+            text,
+            fontSize = size.sp,
+            lineHeight = (size * 1.12f).sp,
+            fontFamily = fontFamily,
+            fontWeight = fontWeight,
+            color = color,
+            textAlign = textAlign,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

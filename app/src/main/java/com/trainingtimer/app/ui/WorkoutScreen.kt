@@ -251,14 +251,13 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                 ) {
                     ExerciseIcon(p.exercise.icon, tileSize = 52.dp, iconSize = 30.dp, tile = C.Surface, corner = 16.dp, strokeWidth = 1.6f)
                     Spacer(Modifier.width(12.dp))
-                    Text(
+                    FitText(
                         p.exercise.name,
-                        fontFamily = Condensed,
-                        fontSize = 34.sp,
-                        lineHeight = 38.sp,
-                        color = C.Text,
+                        maxFontSize = 34.sp,
+                        minFontSize = 18.sp,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                        fontFamily = Condensed,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
                 }
                 TimerRing(
@@ -381,8 +380,15 @@ private fun RestView(s: WorkoutState, onClose: () -> Unit) {
                 Text(formatTime(s.remainingSec), fontFamily = Condensed, fontSize = 52.sp, color = C.Text)
             }
             Spacer(Modifier.width(20.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(if (s.paused) "PAUSED" else "REST", fontFamily = Condensed, fontSize = 52.sp, lineHeight = 52.sp, color = C.Orange)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FitText(
+                    if (s.paused) "PAUSED" else "REST",
+                    maxFontSize = 52.sp,
+                    minFontSize = 24.sp,
+                    maxLines = 1,
+                    color = C.Orange,
+                    fontFamily = Condensed,
+                )
                 Text("Get into position for the next exercise.", fontSize = 14.sp, color = C.RestMuted, maxLines = 3)
             }
         }
@@ -447,8 +453,8 @@ private fun RestView(s: WorkoutState, onClose: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ExerciseIcon(p.exercise.icon, tileSize = 104.dp, iconSize = 64.dp, tile = C.RestSurface2, corner = 30.dp, strokeWidth = 1.4f)
                 Spacer(Modifier.width(18.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(p.exercise.name, fontFamily = Condensed, fontSize = 36.sp, lineHeight = 40.sp, color = C.Text, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    FitText(p.exercise.name, maxFontSize = 36.sp, minFontSize = 18.sp, maxLines = 3, fontFamily = Condensed)
                     Text(formatTime(p.seconds), fontFamily = Condensed, fontSize = 30.sp, color = C.Lime)
                 }
             }
@@ -523,7 +529,7 @@ private fun FinishedView(s: WorkoutState, onDone: () -> Unit) {
             PathIcon(UiIcons.CHECK, C.Lime, size = 56.dp, strokeWidth = 2.6f)
         }
         Spacer(Modifier.height(24.dp))
-        Text("Workout complete", fontFamily = Condensed, fontSize = 40.sp, lineHeight = 44.sp, color = C.Text, textAlign = TextAlign.Center)
+        FitText("Workout complete", maxFontSize = 40.sp, minFontSize = 24.sp, maxLines = 2, fontFamily = Condensed, textAlign = TextAlign.Center)
         Spacer(Modifier.height(8.dp))
         Text(s.complexName, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = C.Muted, textAlign = TextAlign.Center)
         Spacer(Modifier.height(24.dp))
