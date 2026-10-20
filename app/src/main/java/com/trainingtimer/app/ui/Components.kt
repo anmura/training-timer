@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -80,7 +81,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.trainingtimer.app.data.Exercise
 import com.trainingtimer.app.data.ExerciseIcons
+import com.trainingtimer.app.data.MAX_REPS
 import com.trainingtimer.app.data.Repo
+import com.trainingtimer.app.data.Step
 import com.trainingtimer.app.data.UiIcons
 import com.trainingtimer.app.data.formatTime
 import java.io.File
@@ -365,6 +368,107 @@ fun TimeDialog(title: String, initial: Int, min: Int, onDismiss: () -> Unit, onC
     )
 }
 
+/** Time or reps for one exercise in a complex: −/+ (5 s or 1 rep); tapping the value opens a dialog to type it. */
+@Composable
+fun StepValueStepper(
+    step: Step,
+    onChange: (Step) -> Unit,
+    buttonWidth: Dp = 34.dp,
+    title: String = "Set time",
+) {
+    if (!step.byReps) {
+        TimeStepper(step.seconds, { onChange(step.copy(seconds = it)) }, buttonWidth = buttonWidth, title = title)
+        return
+    }
+    var dialog by remember { mutableStateOf(false) }
+    Stepper(
+        text = "×${step.reps}",
+        onMinus = { onChange(step.copy(reps = (step.reps - 1).coerceAtLeast(1))) },
+        onPlus = { onChange(step.copy(reps = (step.reps + 1).coerceAtMost(MAX_REPS))) },
+        textColor = C.Sky,
+        onTextClick = { dialog = true },
+        buttonWidth = buttonWidth,
+        minusLabel = "Fewer reps",
+        plusLabel = "More reps",
+    )
+    if (dialog) {
+        RepsDialog(title, step.reps, onDismiss = { dialog = false }, onConfirm = {
+            onChange(step.copy(reps = it))
+            dialog = false
+        })
+    }
+}
+
+@Composable
+fun RepsDialog(title: String, initial: Int, onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
+    var text by remember { mutableStateOf(initial.toString()) }
+    val value = text.toIntOrNull() ?: 0
+    val valid = value in 1..MAX_REPS
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = C.Surface,
+        title = { Text(title, color = C.Text) },
+        text = {
+            SelectAllNumberField(
+                value = text,
+                onValueChange = { text = it },
+                label = "reps",
+                focusRequester = focus,
+                imeAction = ImeAction.Done,
+                onFilled = {},
+                onAction = { if (valid) onConfirm(value) },
+                maxDigits = 3,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(value) }, enabled = valid) {
+                Text("OK", color = if (valid) C.Lime else C.Muted)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = C.Text) }
+        },
+    )
+}
+
+/** Small Time | Reps switch under an exercise name in the complex builder. */
+@Composable
+fun StepTypeToggle(byReps: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(C.Surface2)
+            .padding(2.dp),
+    ) {
+        TypeSegment("Time", selected = !byReps, color = C.Lime) { onChange(false) }
+        TypeSegment("Reps", selected = byReps, color = C.Sky) { onChange(true) }
+    }
+}
+
+@Composable
+private fun TypeSegment(text: String, selected: Boolean, color: Color, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .height(30.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) color else Color.Transparent)
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = if (selected) C.OnLime else C.Muted,
+            maxLines = 1,
+        )
+    }
+}
+
 /** Two-digit number field: its whole value is selected when it gets focus, so typing replaces it. */
 @Composable
 private fun SelectAllNumberField(
@@ -376,6 +480,7 @@ private fun SelectAllNumberField(
     onFilled: () -> Unit,
     onAction: () -> Unit,
     modifier: Modifier = Modifier,
+    maxDigits: Int = 2,
 ) {
     var field by remember { mutableStateOf(TextFieldValue(value, TextRange(0, value.length))) }
     // The tap that focuses the field also moves the cursor; keep the full selection for that first event.
@@ -383,7 +488,7 @@ private fun SelectAllNumberField(
     OutlinedTextField(
         value = field,
         onValueChange = { next ->
-            val digits = next.text.filter { it.isDigit() }.take(2)
+            val digits = next.text.filter { it.isDigit() }.take(maxDigits)
             if (keepSelection && digits == field.text) {
                 keepSelection = false
                 field = field.copy(selection = TextRange(0, digits.length))
@@ -393,7 +498,7 @@ private fun SelectAllNumberField(
                 field = if (digits == next.text) next else TextFieldValue(digits, TextRange(digits.length))
                 if (changed) {
                     onValueChange(digits)
-                    if (digits.length == 2) onFilled()
+                    if (digits.length == maxDigits) onFilled()
                 }
             }
         },

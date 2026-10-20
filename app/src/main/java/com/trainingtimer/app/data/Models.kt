@@ -17,7 +17,20 @@ object CategoryColors {
     val palette = listOf("#4ADE9B", "#FF9F43", "#C49BFF", "#5EC2FF", "#FF7A9C", "#FFD54A", "#7FE0D6")
 }
 
-data class Step(val exerciseId: String, val seconds: Int, val key: String = newId())
+/**
+ * One exercise in a complex. A timed step lasts [seconds]; a reps step ([byReps]) has no timer and
+ * ends when the user taps Done. Both values are kept so switching the type back and forth loses nothing.
+ */
+data class Step(
+    val exerciseId: String,
+    val seconds: Int,
+    val key: String = newId(),
+    val reps: Int = DEFAULT_REPS,
+    val byReps: Boolean = false,
+)
+
+const val DEFAULT_REPS = 10
+const val MAX_REPS = 999
 
 sealed class ComplexItem {
     abstract val key: String
@@ -62,10 +75,14 @@ fun Complex.exerciseIds(): List<String> = items.flatMap { item ->
     }
 }
 
-/** One exercise interval of the expanded workout and the rest that follows it (0 after the last one). */
+/**
+ * One exercise set of the expanded workout and the rest that follows it (0 after the last one).
+ * [reps] is null for a timed set; for a reps set [seconds] is 0.
+ */
 data class FlatSet(
     val exerciseId: String,
     val seconds: Int,
+    val reps: Int?,
     val round: Int,
     val rounds: Int,
     val restAfter: Int,
@@ -90,15 +107,33 @@ fun Complex.flatten(): List<FlatSet> {
             r.cycleKey != null && r.cycleKey == raw[i + 1].cycleKey -> r.cycleRest ?: restSeconds
             else -> restSeconds
         }
-        FlatSet(r.step.exerciseId, r.step.seconds, r.round, r.rounds, rest)
+        val st = r.step
+        FlatSet(st.exerciseId, if (st.byReps) 0 else st.seconds, if (st.byReps) st.reps else null, r.round, r.rounds, rest)
     }
 }
 
 /** Number of exercise intervals in the whole workout, cycles expanded. */
 fun Complex.setCount(): Int = flatten().size
 
-/** Total workout length in seconds: all exercises plus the rests between them. */
+/** Known workout length in seconds: timed exercises plus all rests. Reps sets add their own, unknown time. */
 fun Complex.totalSeconds(): Int = flatten().sumOf { it.seconds + it.restAfter }
+
+/** Number of reps sets in the whole workout, cycles expanded. */
+fun Complex.repsSetCount(): Int = flatten().count { it.reps != null }
+
+/** "12:30", or "12:30 + 3 reps sets" when some sets are counted in reps. */
+fun Complex.durationLabel(): String {
+    val reps = repsSetCount()
+    val time = formatTime(totalSeconds())
+    return when (reps) {
+        0 -> time
+        1 -> "$time + 1 reps set"
+        else -> "$time + $reps reps sets"
+    }
+}
+
+/** Short value of a step: "0:30" or "×12". */
+fun Step.valueLabel(): String = if (byReps) "×$reps" else formatTime(seconds)
 
 fun Complex.describe(): String {
     val n = exerciseIds().size
@@ -106,6 +141,8 @@ fun Complex.describe(): String {
     val parts = mutableListOf(if (n == 1) "1 exercise" else "$n exercises")
     if (cycles.size == 1) parts += "1 cycle ×${cycles[0].repeats}"
     else if (cycles.size > 1) parts += "${cycles.size} cycles"
+    val reps = repsSetCount()
+    if (reps > 0) parts += if (reps == 1) "1 reps set" else "$reps reps sets"
     parts += if (restSeconds > 0) "rest $restSeconds s" else "no rest"
     return parts.joinToString(" · ")
 }

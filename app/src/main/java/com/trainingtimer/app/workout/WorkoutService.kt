@@ -32,6 +32,7 @@ class WorkoutService : Service() {
     private var inForeground = false
 
     private data class NotificationKey(val index: Int, val seconds: Int, val paused: Boolean, val finished: Boolean)
+    // For a reps set "seconds" is the stopwatch, refreshed every 10 s to keep notification updates rare.
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -45,7 +46,12 @@ class WorkoutService : Service() {
         }
         scope.launch {
             WorkoutEngine.state
-                .map { s -> s?.let { NotificationKey(it.index, it.remainingSec, it.paused, it.finished) } }
+                .map { s ->
+                    s?.let {
+                        val sec = if (it.phase.isReps) (it.elapsedMs / 10_000).toInt() else it.remainingSec
+                        NotificationKey(it.index, sec, it.paused, it.finished)
+                    }
+                }
                 .distinctUntilChanged()
                 .collect { key ->
                     val s = WorkoutEngine.state.value
@@ -121,7 +127,7 @@ class WorkoutService : Service() {
         val p = s.phase
         val time = formatTime(s.remainingSec)
         val title = when (p.type) {
-            PhaseType.WORK -> "${p.exercise.name} · $time"
+            PhaseType.WORK -> if (p.isReps) "${p.exercise.name} · ×${p.reps}" else "${p.exercise.name} · $time"
             PhaseType.REST -> "Rest · $time"
             PhaseType.PREPARE -> "Get ready · $time"
         }
@@ -130,13 +136,20 @@ class WorkoutService : Service() {
                 val round = if (p.rounds > 0) " · round ${p.round}/${p.rounds}" else ""
                 "Exercise ${p.workNumber} of ${s.totalWork}$round"
             }
-            PhaseType.REST, PhaseType.PREPARE -> "Next: ${p.exercise.name}"
+            PhaseType.REST, PhaseType.PREPARE -> "Next: ${p.exercise.name}" + (p.reps?.let { " ×$it" } ?: "")
         }
-        return builder
+        builder
             .setContentTitle(if (s.paused) "Paused — $title" else title)
             .setContentText("$detail · ${s.complexName}")
-            .addAction(0, if (s.paused) "Resume" else "Pause", actionIntent(ACTION_TOGGLE, 1))
-            .addAction(0, "Skip", actionIntent(ACTION_SKIP, 2))
+        if (p.isReps) {
+            // A reps set ends with one tap: Done is the first action.
+            builder.addAction(0, "Done", actionIntent(ACTION_SKIP, 2))
+        } else {
+            builder
+                .addAction(0, if (s.paused) "Resume" else "Pause", actionIntent(ACTION_TOGGLE, 1))
+                .addAction(0, "Skip", actionIntent(ACTION_SKIP, 2))
+        }
+        return builder
             .addAction(0, "End", actionIntent(ACTION_STOP, 3))
             .build()
     }

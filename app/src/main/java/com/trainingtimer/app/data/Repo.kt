@@ -329,11 +329,11 @@ object Codec {
             for (item in c.items) {
                 when (item) {
                     is ComplexItem.Single -> items.put(
-                        JSONObject().put("type", "single").put("ex", item.step.exerciseId).put("sec", item.step.seconds)
+                        stepToJson(item.step).put("type", "single")
                     )
                     is ComplexItem.Cycle -> {
                         val steps = JSONArray()
-                        for (s in item.steps) steps.put(JSONObject().put("ex", s.exerciseId).put("sec", s.seconds))
+                        for (s in item.steps) steps.put(stepToJson(s))
                         val o = JSONObject().put("type", "cycle").put("repeats", item.repeats).put("steps", steps)
                         if (item.rest != null) o.put("rest", item.rest)
                         items.put(o)
@@ -352,6 +352,19 @@ object Codec {
             .put("settings", settings)
             .put("categories", categories)
     }
+
+    private fun stepToJson(s: Step): JSONObject {
+        val o = JSONObject().put("ex", s.exerciseId).put("sec", s.seconds).put("reps", s.reps)
+        if (s.byReps) o.put("byReps", true)
+        return o
+    }
+
+    private fun stepFromJson(o: JSONObject): Step = Step(
+        exerciseId = o.getString("ex"),
+        seconds = o.getInt("sec"),
+        reps = o.optInt("reps", DEFAULT_REPS).coerceIn(1, MAX_REPS),
+        byReps = o.optBoolean("byReps", false),
+    )
 
     fun fromJson(o: JSONObject): AppData {
         val exercises = ArrayList<Exercise>()
@@ -379,12 +392,12 @@ object Codec {
                         val stArr = it.optJSONArray("steps") ?: JSONArray()
                         for (k in 0 until stArr.length()) {
                             val s = stArr.getJSONObject(k)
-                            steps += Step(s.getString("ex"), s.getInt("sec"))
+                            steps += stepFromJson(s)
                         }
                         val rest = if (it.has("rest")) it.optInt("rest", 0) else null
                         items += ComplexItem.Cycle(it.optInt("repeats", 1), steps, rest = rest)
                     } else {
-                        items += ComplexItem.Single(Step(it.getString("ex"), it.getInt("sec")))
+                        items += ComplexItem.Single(stepFromJson(it))
                     }
                 }
                 complexes += Complex(c.getString("id"), c.getString("name"), c.optInt("rest", 15), items)

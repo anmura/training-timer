@@ -58,6 +58,7 @@ import com.trainingtimer.app.data.Step
 import com.trainingtimer.app.data.UiIcons
 import com.trainingtimer.app.data.formatTime
 import com.trainingtimer.app.data.newId
+import com.trainingtimer.app.data.repsSetCount
 import com.trainingtimer.app.data.setCount
 import com.trainingtimer.app.data.totalSeconds
 import kotlinx.coroutines.launch
@@ -134,11 +135,11 @@ fun ComplexEditorScreen(existing: Complex?, data: AppData, onClose: () -> Unit) 
             onBack = onClose,
             onNext = {
                 // Rebuild the single exercises from the selection, keeping times already set and any cycles.
-                val previousTimes = draft.items.filterIsInstance<ComplexItem.Single>().associate { it.step.exerciseId to it.step.seconds }
+                val previousSteps = draft.items.filterIsInstance<ComplexItem.Single>().associate { it.step.exerciseId to it.step }
                 val cycles = draft.items.filterIsInstance<ComplexItem.Cycle>()
                 draft.items.clear()
                 for (id in draft.selected) {
-                    draft.items.add(ComplexItem.Single(Step(id, previousTimes[id] ?: DEFAULT_SECONDS)))
+                    draft.items.add(ComplexItem.Single(previousSteps[id]?.copy(key = newId()) ?: Step(id, DEFAULT_SECONDS)))
                 }
                 draft.items.addAll(cycles)
                 step = 2
@@ -256,6 +257,7 @@ private fun BuilderStep(
     val preview = draft.toComplex()
     val total = preview.totalSeconds()
     val sets = preview.setCount()
+    val repsSets = preview.repsSetCount()
 
     fun save() {
         val name = draft.name.trim()
@@ -340,7 +342,7 @@ private fun BuilderStep(
                         item = item,
                         exercise = exById[item.step.exerciseId],
                         handle = handle,
-                        onTime = { sec -> draft.replace(item.key, item.copy(step = item.step.copy(seconds = sec))) },
+                        onStep = { st -> draft.replace(item.key, item.copy(step = st)) },
                         menu = cycleKeys.mapIndexed { n, key ->
                             (if (cycleKeys.size == 1) "Move into cycle" else "Move into cycle ${n + 1}") to { draft.moveIntoCycle(item.key, key) }
                         } + ("Remove" to { draft.remove(item.key) }),
@@ -393,8 +395,9 @@ private fun BuilderStep(
 
         ActionBar {
             Column(Modifier.weight(1f)) {
-                Text(formatTime(total), fontFamily = Condensed, fontSize = 30.sp, color = C.Text)
-                Text("total · $sets exercise sets", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = C.Muted)
+                Text(formatTime(total) + if (repsSets > 0) " +" else "", fontFamily = Condensed, fontSize = 30.sp, color = C.Text)
+                Text(
+                    if (repsSets > 0) "timed part · $repsSets reps sets at your pace" else "total · $sets exercise sets", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = C.Muted)
             }
             BigButton(if (isNew) "Save complex" else "Save", onClick = { save() }, icon = UiIcons.CHECK)
         }
@@ -458,7 +461,7 @@ private fun SingleRow(
     item: ComplexItem.Single,
     exercise: Exercise?,
     handle: Modifier,
-    onTime: (Int) -> Unit,
+    onStep: (Step) -> Unit,
     menu: List<Pair<String, () -> Unit>>,
 ) {
     Row(
@@ -473,17 +476,31 @@ private fun SingleRow(
         Spacer(Modifier.width(4.dp))
         ExerciseIcon(exercise?.icon ?: ExerciseIcons.DEFAULT, tileSize = 40.dp, iconSize = 22.dp)
         Spacer(Modifier.width(10.dp))
-        Text(
-            exercise?.name ?: "Deleted exercise",
-            Modifier.weight(1f),
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = C.Text,
-            lineHeight = 18.sp,
-        )
-        TimeStepper(item.step.seconds, onTime, buttonWidth = 30.dp, title = exercise?.name ?: "Set time")
+        StepNameAndType(exercise?.name ?: "Deleted exercise", item.step, onStep, Modifier.weight(1f))
+        StepValueStepper(item.step, onStep, buttonWidth = 30.dp, title = exercise?.name ?: "Set time")
         OverflowMenu("Exercise options", menu, size = 36.dp)
     }
+}
+
+/** Exercise name with the Time | Reps switch under it. */
+@Composable
+private fun StepNameAndType(name: String, step: Step, onStep: (Step) -> Unit, modifier: Modifier) {
+    Column(modifier.padding(end = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = C.Text, lineHeight = 18.sp)
+        StepTypeToggle(step.byReps) { onStep(step.copy(byReps = it)) }
+    }
+}
+
+/** "3 exercises · 1:30 per round", or "… · 1:00 + 1 reps set per round". */
+private fun cycleRoundLabel(steps: List<Step>): String {
+    val n = steps.size
+    val timed = steps.filter { !it.byReps }.sumOf { it.seconds }
+    val reps = steps.count { it.byReps }
+    val parts = buildList {
+        if (timed > 0 || reps == 0) add(formatTime(timed))
+        if (reps > 0) add(if (reps == 1) "1 reps set" else "$reps reps sets")
+    }
+    return "${if (n == 1) "1 exercise" else "$n exercises"} · ${parts.joinToString(" + ")} per round"
 }
 
 @Composable
@@ -517,7 +534,7 @@ private fun CycleBlock(
                 Text(if (number > 0) "Cycle $number" else "Cycle", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
                 val n = cycle.steps.size
                 Text(
-                    "${if (n == 1) "1 exercise" else "$n exercises"} · ${formatTime(cycle.steps.sumOf { it.seconds })} per round",
+                    cycleRoundLabel(cycle.steps),
                     fontSize = 12.sp,
                     color = C.Muted,
                 )
@@ -589,20 +606,9 @@ private fun CycleBlock(
                 Spacer(Modifier.width(2.dp))
                 ExerciseIcon(ex?.icon ?: ExerciseIcons.DEFAULT, tileSize = 38.dp, iconSize = 22.dp)
                 Spacer(Modifier.width(8.dp))
-                Text(
-                    ex?.name ?: "Deleted exercise",
-                    Modifier.weight(1f),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = C.Text,
-                    lineHeight = 18.sp,
-                )
-                TimeStepper(
-                    s.seconds,
-                    { sec -> onChange(cycle.copy(steps = cycle.steps.map { if (it.key == s.key) it.copy(seconds = sec) else it })) },
-                    buttonWidth = 28.dp,
-                    title = ex?.name ?: "Set time",
-                )
+                val onStep: (Step) -> Unit = { st -> onChange(cycle.copy(steps = cycle.steps.map { if (it.key == s.key) st else it })) }
+                StepNameAndType(ex?.name ?: "Deleted exercise", s, onStep, Modifier.weight(1f))
+                StepValueStepper(s, onStep, buttonWidth = 28.dp, title = ex?.name ?: "Set time")
                 OverflowMenu(
                     "Exercise options",
                     listOf(

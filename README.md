@@ -20,18 +20,20 @@ No account, no ads, no internet connection. All data stays on the phone.
 
 **Complex builder**
 - Pick exercises with checkboxes, then set the time of each one (−/+ in 5-second steps, or tap the time to type it)
+- Switch any exercise between **Time** and **Reps**: a reps set has a target count (for example ×12) instead of a timer
 - Cycles: a group of exercises repeated N rounds, with its own optional rest between exercises
 - One rest time for the whole complex; no rest is added after the last exercise
 - Hold and drag to reorder exercises, cycles and complexes; move exercises into and out of cycles
-- The total workout time is calculated live
+- The total workout time is calculated live (reps sets are shown separately, since they take as long as you need)
 
 **Workout**
 - Optional "get ready" countdown before the first exercise (0–15 s, set in Settings)
 - Large timer ring, current round (for example *Round 2/3*), progress for every set and time left
+- Reps sets show the target count and a small stopwatch; tap the big **Done** button when you finish and the next rest starts
 - Rest screen with the next exercise shown large and the two after it
 - Pause, skip, previous and +10 s
 - Beeps in the last 3 seconds and at every switch, vibration on each switch (both can be turned off)
-- Keeps running with the screen locked; pause, skip and end from the notification
+- Keeps running with the screen locked; pause, skip, Done (for reps sets) and end from the notification
 - The screen stays on during a workout
 
 **Import and export**
@@ -82,7 +84,7 @@ On first launch the app adds:
 | Complex | Sets | Duration | Highlights |
 |---|---|---|---|
 | Утренняя зарядка (morning warm-up) | 14 | ~7 min | joint circles, a ×2 cycle |
-| Силовая круговая (strength circuit) | 19 | ~16 min | two cycles (×3 and ×2) with their own rests |
+| Силовая круговая (strength circuit) | 19 | ~11 min + reps | two cycles (×3 and ×2) with their own rests, push-ups and pull-ups in reps |
 | Плечи: мобильность (shoulder mobility) | 16 | ~13 min | ×3 band cycle, left/right pairs |
 | Растяжка всего тела (full-body stretch) | 22 | ~14 min | neck cycle with 3 s rest, side-by-side stretches |
 | Запястья и предплечья (wrists and forearms) | 15 | ~10 min | ×3 and ×2 cycles |
@@ -107,6 +109,7 @@ The built-in programs live in [`app/src/main/assets`](app/src/main/assets) and u
       "rest": 15,
       "items": [
         { "exercise": "Burpees", "time": 30 },
+        { "exercise": "Push-ups", "reps": 12 },
         { "cycle": { "repeats": 3, "rest": 10, "items": [
           { "exercise": "Side plank", "time": 45 }
         ] } }
@@ -118,6 +121,7 @@ The built-in programs live in [`app/src/main/assets`](app/src/main/assets) and u
 
 - All sections are optional; a plain list of exercise names is also accepted.
 - `rest` and `time` are in seconds. A cycle's `rest` is optional; without it the complex's rest is used.
+- Use `reps` instead of `time` for a set counted in repetitions; it ends when you tap Done.
 - Categories are matched by name and created if they don't exist.
 - An unknown or missing `icon` becomes the "?" icon.
 - Exercises and complexes whose names already exist are skipped.

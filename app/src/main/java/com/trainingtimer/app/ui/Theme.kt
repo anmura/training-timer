@@ -33,6 +33,9 @@ object C {
     val RestLine = Color(0xFF3A2E22)
     val RestMuted = Color(0xFFB3A99F)
     val Red = Color(0xFFFF7A7A)
+    /** Reps sets (counted, not timed). */
+    val Sky = Color(0xFF6CC4FF)
+    val SkyTrack = Color(0xFF1D2A33)
 }
 
 /** Condensed bold system font, used for big numbers and display titles. */

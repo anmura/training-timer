@@ -22,6 +22,7 @@ data class ImportResult(
  *   "exercises": [ { "name": "Burpees", "icon": "jump", "categories": ["Силовые"] }, ... ],
  *   "complexes": [ { "name": "Morning HIIT", "rest": 15, "items": [
  *       { "exercise": "Burpees", "time": 30 },
+ *       { "exercise": "Push-ups", "reps": 12 },                              (reps set: ends when the user taps Done)
  *       { "cycle": { "repeats": 3, "items": [ { "exercise": "Plank", "time": 45 } ] } } ] } ]
  * }
  * "complexes" is optional. A plain list of exercises is also accepted.
@@ -228,7 +229,13 @@ object ImportExport {
             return null
         }
         val ex = byName[exName.lowercase()] ?: create(exName)
-        return Step(ex.id, o.optInt("time", 30).coerceIn(1, 3600))
+        val seconds = o.optInt("time", 30).coerceIn(1, 3600)
+        val reps = o.optInt("reps", 0)
+        return if (reps > 0) {
+            Step(ex.id, seconds, reps = reps.coerceAtMost(MAX_REPS), byReps = true)
+        } else {
+            Step(ex.id, seconds)
+        }
     }
 
     fun exportExercises(d: AppData): String =
@@ -280,7 +287,10 @@ object ImportExport {
             .toString(2)
     }
 
-    private fun stepJson(e: Exercise, s: Step): JSONObject = JSONObject().put("exercise", e.name).put("time", s.seconds)
+    private fun stepJson(e: Exercise, s: Step): JSONObject {
+        val o = JSONObject().put("exercise", e.name)
+        return if (s.byReps) o.put("reps", s.reps) else o.put("time", s.seconds)
+    }
 
     private fun exercisesJson(d: AppData): JSONArray {
         val arr = JSONArray()

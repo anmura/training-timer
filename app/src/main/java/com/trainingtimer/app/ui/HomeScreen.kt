@@ -62,6 +62,7 @@ import com.trainingtimer.app.data.UiIcons
 import com.trainingtimer.app.data.describe
 import com.trainingtimer.app.data.exerciseIds
 import com.trainingtimer.app.data.formatTime
+import com.trainingtimer.app.data.repsSetCount
 import com.trainingtimer.app.data.totalSeconds
 
 @Composable
@@ -333,7 +334,7 @@ private fun ComplexCard(
                 Text(complex.describe(), fontSize = 13.sp, color = C.Muted)
             }
             Text(
-                formatTime(complex.totalSeconds()),
+                formatTime(complex.totalSeconds()) + if (complex.repsSetCount() > 0) "+" else "",
                 fontFamily = Condensed,
                 fontSize = 30.sp,
                 color = C.Text,

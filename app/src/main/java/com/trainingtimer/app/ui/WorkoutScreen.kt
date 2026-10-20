@@ -127,7 +127,8 @@ private fun WorkoutHeader(s: WorkoutState, onClose: () -> Unit, muted: Color, ba
             } else {
                 "${p.workNumber - 1}/${s.totalWork} done"
             }
-            Text("$progress · ${formatTime(s.totalLeftSec)} left", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = muted, maxLines = 1)
+            val plus = if (s.repsSetsAhead > 0 || p.isReps) "+" else ""
+            Text("$progress · ${formatTime(s.totalLeftSec)}$plus left", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = muted, maxLines = 1)
         }
         if (p.rounds > 0) {
             Row(
@@ -161,6 +162,7 @@ private fun SegmentBar(s: WorkoutState, color: Color) {
             for (i in 1..s.totalWork) {
                 val c = when {
                     i <= doneCount -> color
+                    i == current && s.phase.isReps -> C.Sky
                     i == current && s.phase.type == PhaseType.WORK -> C.Text
                     else -> C.Surface3
                 }
@@ -260,6 +262,24 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                         modifier = Modifier.weight(1f, fill = false),
                     )
                 }
+                if (p.isReps) {
+                    RepsRing(s, ringSize)
+                    BigButton(
+                        "Done",
+                        onClick = { WorkoutEngine.done() },
+                        icon = UiIcons.CHECK,
+                        height = 76.dp,
+                        fontSize = 22.sp,
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .fillMaxWidth(),
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                        RoundIconButton(UiIcons.PREV, "Previous", { WorkoutEngine.previous() }, size = 52.dp, background = C.Surface, filled = true)
+                        RoundIconButton(UiIcons.NEXT, "Skip", { WorkoutEngine.skip() }, size = 52.dp, background = C.Surface, filled = true)
+                    }
+                    return@Column
+                }
                 TimerRing(
                     fraction = fractionLeft(s),
                     color = if (s.paused) C.Faint else C.Lime,
@@ -294,6 +314,35 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
         NextCard(s)
     }
 }
+
+/** A reps set: no countdown, the target number of reps and a small stopwatch. */
+@Composable
+private fun RepsRing(s: WorkoutState, ringSize: Dp) {
+    val size = (ringSize - 70.dp).coerceAtLeast(140.dp)
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        TimerRing(fraction = 0f, color = C.Sky, track = C.SkyTrack, size = size, stroke = 16.dp) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("DO", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp, color = C.Sky)
+                Text("${s.phase.reps ?: 0}", fontFamily = Condensed, fontSize = (size.value * 0.4f).sp, color = C.Text)
+                Text(
+                    if (s.paused) "PAUSED" else "REPS",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 2.sp,
+                    color = if (s.paused) C.Orange else C.Sky,
+                )
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            PathIcon(UiIcons.TIMER, C.Muted, size = 16.dp, strokeWidth = 2f)
+            Spacer(Modifier.width(6.dp))
+            Text("${formatTime((s.elapsedMs / 1000).toInt())} on this set", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = C.Muted)
+        }
+    }
+}
+
+/** "0:30" for a timed set, "×12" for a reps set. */
+private fun Phase.valueLabel(): String = if (reps != null) "×$reps" else formatTime(seconds)
 
 @Composable
 private fun Controls(paused: Boolean, accent: Color, onAccent: Color, sideBg: Color) {
@@ -347,7 +396,7 @@ private fun NextCard(s: WorkoutState) {
                 Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.2.sp, color = C.Muted)
                 Text(next.exercise.name, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = C.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Text(formatTime(next.seconds), fontFamily = Condensed, fontSize = 26.sp, color = C.Text)
+            Text(next.valueLabel(), fontFamily = Condensed, fontSize = 26.sp, color = if (next.reps != null) C.Sky else C.Text)
         }
     }
 }
@@ -464,7 +513,7 @@ private fun RestView(s: WorkoutState, onClose: () -> Unit) {
                 Spacer(Modifier.width(18.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     FitText(p.exercise.name, maxFontSize = 36.sp, minFontSize = 18.sp, maxLines = 3, fontFamily = Condensed)
-                    Text(formatTime(p.seconds), fontFamily = Condensed, fontSize = 30.sp, color = C.Lime)
+                    Text(p.valueLabel(), fontFamily = Condensed, fontSize = 30.sp, color = if (p.reps != null) C.Sky else C.Lime)
                 }
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -512,7 +561,7 @@ private fun ThenRow(p: Phase) {
         Spacer(Modifier.width(12.dp))
         val round = if (p.rounds > 0) " · round ${p.round}" else ""
         Text("${p.exercise.name}$round", Modifier.weight(1f), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD9D2CB), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(formatTime(p.seconds), fontFamily = Condensed, fontSize = 20.sp, color = C.RestMuted)
+        Text(p.valueLabel(), fontFamily = Condensed, fontSize = 20.sp, color = C.RestMuted)
     }
 }
 
@@ -543,7 +592,7 @@ private fun FinishedView(s: WorkoutState, onDone: () -> Unit) {
         Text(s.complexName, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = C.Muted, textAlign = TextAlign.Center)
         Spacer(Modifier.height(24.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Stat(formatTime(s.plannedSeconds), "total time")
+            Stat(formatTime(s.actualSeconds), "total time")
             Stat("${s.totalWork}", "exercise sets")
         }
         Spacer(Modifier.height(40.dp))

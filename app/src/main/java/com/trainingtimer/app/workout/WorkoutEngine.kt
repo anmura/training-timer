@@ -39,7 +39,11 @@ data class Phase(
     val workNumber: Int,
     val round: Int,
     val rounds: Int,
-)
+    /** Non-null for a reps set: no timer, it ends when the user taps Done. [seconds] is 0 then. */
+    val reps: Int? = null,
+) {
+    val isReps: Boolean get() = type == PhaseType.WORK && reps != null
+}
 
 data class WorkoutState(
     val complexName: String,
@@ -50,7 +54,15 @@ data class WorkoutState(
     val finished: Boolean,
     val totalWork: Int,
     val plannedSeconds: Int,
+    /** Time spent on the current reps set. */
+    val elapsedMs: Long = 0,
+    val repsSets: Int = 0,
+    /** Real time the workout took, pauses excluded; set when it finishes. */
+    val actualSeconds: Int = 0,
 ) {
+    /** Reps sets after the current phase; their time is unknown, so "time left" can't include them. */
+    val repsSetsAhead: Int get() = phases.drop(index + 1).count { it.isReps }
+
     val phase: Phase get() = phases[index.coerceIn(0, phases.lastIndex)]
     val remainingSec: Int get() = ((remainingMs + 999) / 1000).toInt()
     val totalLeftSec: Int get() = remainingSec + phases.drop(index + 1).sumOf { it.seconds }
@@ -67,11 +79,11 @@ fun buildPhases(complex: Complex, exercises: List<Exercise>): List<Phase> {
     val sets = complex.flatten().mapNotNull { f -> byId[f.exerciseId]?.let { ex -> f to ex } }
     val out = ArrayList<Phase>()
     sets.forEachIndexed { i, (f, ex) ->
-        out += Phase(PhaseType.WORK, ex, f.seconds, i + 1, f.round, f.rounds)
+        out += Phase(PhaseType.WORK, ex, f.seconds, i + 1, f.round, f.rounds, f.reps)
         // No rest after the last exercise.
         if (i < sets.lastIndex && f.restAfter > 0) {
             val (next, nextEx) = sets[i + 1]
-            out += Phase(PhaseType.REST, nextEx, f.restAfter, i + 2, next.round, next.rounds)
+            out += Phase(PhaseType.REST, nextEx, f.restAfter, i + 2, next.round, next.rounds, next.reps)
         }
     }
     return out
@@ -86,6 +98,11 @@ object WorkoutEngine {
     private var appContext: Context? = null
     private var tickJob: Job? = null
     private var endAt = 0L
+    /** When the current reps set started (shifted on resume so pauses don't count). */
+    private var startedAt = 0L
+    private var workoutStartedAt = 0L
+    private var pausedAt = 0L
+    private var pausedTotal = 0L
     private var lastBeepSecond = -1
     private var tone: ToneGenerator? = null
 
@@ -95,7 +112,7 @@ object WorkoutEngine {
         val countdown = Repo.state.value.settings.countdown.coerceIn(0, 15)
         val phases = if (countdown > 0) {
             val f = built[0]
-            listOf(Phase(PhaseType.PREPARE, f.exercise, countdown, 1, f.round, f.rounds)) + built
+            listOf(Phase(PhaseType.PREPARE, f.exercise, countdown, 1, f.round, f.rounds, f.reps)) + built
         } else {
             built
         }
@@ -112,8 +129,12 @@ object WorkoutEngine {
             finished = false,
             totalWork = phases.count { it.type == PhaseType.WORK },
             plannedSeconds = complex.totalSeconds(),
+            repsSets = phases.count { it.isReps },
         )
         endAt = now() + first.seconds * 1000L
+        startedAt = now()
+        workoutStartedAt = now()
+        pausedTotal = 0L
         lastBeepSecond = -1
         signalPhaseStart(first)
         startTicking()
@@ -125,12 +146,18 @@ object WorkoutEngine {
         if (s.finished) return
         if (s.paused) {
             endAt = now() + s.remainingMs
+            startedAt = now() - s.elapsedMs
+            pausedTotal += now() - pausedAt
             _state.value = s.copy(paused = false)
         } else {
             val rem = (endAt - now()).coerceAtLeast(0)
-            _state.value = s.copy(paused = true, remainingMs = rem)
+            pausedAt = now()
+            _state.value = s.copy(paused = true, remainingMs = rem, elapsedMs = now() - startedAt)
         }
     }
+
+    /** Finishes the current reps set (or skips any other phase) and moves on. */
+    fun done() = skip()
 
     fun skip() {
         val s = _state.value ?: return
@@ -141,13 +168,13 @@ object WorkoutEngine {
     fun previous() {
         val s = _state.value ?: return
         if (s.finished) return
-        val elapsed = s.phase.seconds * 1000L - s.remainingMs
+        val elapsed = if (s.phase.isReps) s.elapsedMs else s.phase.seconds * 1000L - s.remainingMs
         if (elapsed > 3000 || s.index == 0) goTo(s.index) else goTo(s.index - 1)
     }
 
     fun addTime(seconds: Int) {
         val s = _state.value ?: return
-        if (s.finished) return
+        if (s.finished || s.phase.isReps) return
         lastBeepSecond = -1
         if (s.paused) {
             _state.value = s.copy(remainingMs = s.remainingMs + seconds * 1000L)
@@ -186,6 +213,11 @@ object WorkoutEngine {
     private fun tick() {
         val s = _state.value ?: return
         if (s.paused || s.finished) return
+        if (s.phase.isReps) {
+            // No countdown: wait for Done, just keep the stopwatch going.
+            _state.value = s.copy(elapsedMs = now() - startedAt)
+            return
+        }
         val rem = endAt - now()
         if (rem <= 0) {
             goTo(s.index + 1)
@@ -208,15 +240,18 @@ object WorkoutEngine {
         val i = index.coerceAtLeast(0)
         val p = s.phases[i]
         endAt = now() + p.seconds * 1000L
+        startedAt = now()
         lastBeepSecond = -1
-        _state.value = s.copy(index = i, remainingMs = p.seconds * 1000L)
+        _state.value = s.copy(index = i, remainingMs = p.seconds * 1000L, elapsedMs = 0)
         signalPhaseStart(p)
     }
 
     private fun finish() {
         val s = _state.value ?: return
         stopTicking()
-        _state.value = s.copy(finished = true, paused = false, remainingMs = 0)
+        if (s.paused) pausedTotal += now() - pausedAt
+        val actual = ((now() - workoutStartedAt - pausedTotal) / 1000).toInt().coerceAtLeast(0)
+        _state.value = s.copy(finished = true, paused = false, remainingMs = 0, actualSeconds = actual)
         val settings = Repo.state.value.settings
         if (settings.beeps) toneGenerator()?.startTone(ToneGenerator.TONE_PROP_ACK, 900)
         if (settings.vibration) vibrate(longArrayOf(0, 400, 150, 400, 150, 600))
