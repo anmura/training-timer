@@ -219,17 +219,17 @@ private fun BottomNav(tab: Int, onTab: (Int) -> Unit) {
     )
     NavigationBar(containerColor = C.NavBg) {
         NavigationBarItem(
-            selected = tab == 0,
-            onClick = { onTab(0) },
-            icon = { PathIcon(UiIcons.LIST, if (tab == 0) C.Lime else C.Muted) },
-            label = { Text("Complexes", fontWeight = FontWeight.Bold) },
-            colors = colors,
-        )
-        NavigationBarItem(
             selected = tab == 1,
             onClick = { onTab(1) },
             icon = { PathIcon(UiIcons.DUMBBELL, if (tab == 1) C.Lime else C.Muted) },
             label = { Text("Exercises", fontWeight = FontWeight.Bold) },
+            colors = colors,
+        )
+        NavigationBarItem(
+            selected = tab == 0,
+            onClick = { onTab(0) },
+            icon = { PathIcon(UiIcons.LIST, if (tab == 0) C.Lime else C.Muted) },
+            label = { Text("Complexes", fontWeight = FontWeight.Bold) },
             colors = colors,
         )
     }
