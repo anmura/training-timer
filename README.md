@@ -84,7 +84,7 @@ On first launch the app adds:
 | Complex | Sets | Duration | Highlights |
 |---|---|---|---|
 | Утренняя зарядка (morning warm-up) | 14 | ~7 min | joint circles, a ×2 cycle |
-| Силовая круговая (strength circuit) | 19 | ~11 min + reps | two cycles (×3 and ×2) with their own rests, push-ups and pull-ups in reps |
+| Силовая круговая (strength circuit) | 19 | ~12 min + reps | two cycles (×3 and ×2) with their own rests, push-ups and pull-ups in reps |
 | Плечи: мобильность (shoulder mobility) | 16 | ~13 min | ×3 band cycle, left/right pairs |
 | Растяжка всего тела (full-body stretch) | 22 | ~14 min | neck cycle with 3 s rest, side-by-side stretches |
 | Запястья и предплечья (wrists and forearms) | 15 | ~10 min | ×3 and ×2 cycles |
