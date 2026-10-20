@@ -382,14 +382,23 @@ private fun RestView(s: WorkoutState, onClose: () -> Unit) {
             Spacer(Modifier.width(20.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 FitText(
-                    if (s.paused) "PAUSED" else "REST",
+                    when {
+                        s.paused -> "PAUSED"
+                        s.phase.type == PhaseType.PREPARE -> "GET READY"
+                        else -> "REST"
+                    },
                     maxFontSize = 52.sp,
                     minFontSize = 24.sp,
                     maxLines = 1,
                     color = C.Orange,
                     fontFamily = Condensed,
                 )
-                Text("Get into position for the next exercise.", fontSize = 14.sp, color = C.RestMuted, maxLines = 3)
+                Text(
+                    if (s.phase.type == PhaseType.PREPARE) "Get into position for the first exercise." else "Get into position for the next exercise.",
+                    fontSize = 14.sp,
+                    color = C.RestMuted,
+                    maxLines = 3,
+                )
             }
         }
         Row(

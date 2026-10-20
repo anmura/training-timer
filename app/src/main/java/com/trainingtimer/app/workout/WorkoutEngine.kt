@@ -25,7 +25,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-enum class PhaseType { WORK, REST }
+/** PREPARE is the "get ready" countdown before the first exercise. */
+enum class PhaseType { PREPARE, WORK, REST }
 
 /**
  * One interval of the workout. For REST, [exercise] is the exercise that comes next.
@@ -89,8 +90,15 @@ object WorkoutEngine {
     private var tone: ToneGenerator? = null
 
     fun start(context: Context, complex: Complex, exercises: List<Exercise>) {
-        val phases = buildPhases(complex, exercises)
-        if (phases.isEmpty()) return
+        val built = buildPhases(complex, exercises)
+        if (built.isEmpty()) return
+        val countdown = Repo.state.value.settings.countdown.coerceIn(0, 15)
+        val phases = if (countdown > 0) {
+            val f = built[0]
+            listOf(Phase(PhaseType.PREPARE, f.exercise, countdown, 1, f.round, f.rounds)) + built
+        } else {
+            built
+        }
         val ctx = context.applicationContext
         appContext = ctx
         stopTicking()

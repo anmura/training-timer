@@ -44,6 +44,34 @@ fun SettingsScreen(settings: Settings, onBack: () -> Unit) {
             Modifier.padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            SectionLabel("Workout start")
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(C.Surface)
+                    .padding(start = 16.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Countdown before start", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
+                    Text(
+                        if (settings.countdown == 0) "Off — the first exercise starts right away" else "Get ready for ${settings.countdown} s before the first exercise",
+                        fontSize = 13.sp,
+                        color = C.Muted,
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Stepper(
+                    text = if (settings.countdown == 0) "Off" else "${settings.countdown} s",
+                    onMinus = { Repo.updateSettings(settings.copy(countdown = (settings.countdown - 1).coerceAtLeast(0))) },
+                    onPlus = { Repo.updateSettings(settings.copy(countdown = (settings.countdown + 1).coerceAtMost(15))) },
+                    textColor = C.Orange,
+                    minTextWidth = 48.dp,
+                    minusLabel = "Shorter countdown",
+                    plusLabel = "Longer countdown",
+                )
+            }
             SectionLabel("Workout signals")
             SwitchRow(
                 title = "Beeps",

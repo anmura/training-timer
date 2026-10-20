@@ -344,7 +344,7 @@ object Codec {
                 JSONObject().put("id", c.id).put("name", c.name).put("rest", c.restSeconds).put("items", items)
             )
         }
-        val settings = JSONObject().put("beeps", d.settings.beeps).put("vibration", d.settings.vibration)
+        val settings = JSONObject().put("beeps", d.settings.beeps).put("vibration", d.settings.vibration).put("countdown", d.settings.countdown)
         return JSONObject()
             .put("version", 1)
             .put("exercises", exercises)
@@ -391,7 +391,7 @@ object Codec {
             }
         }
         val s = o.optJSONObject("settings")
-        val settings = if (s != null) Settings(s.optBoolean("beeps", true), s.optBoolean("vibration", true)) else Settings()
+        val settings = if (s != null) Settings(s.optBoolean("beeps", true), s.optBoolean("vibration", true), s.optInt("countdown", 5).coerceIn(0, 15)) else Settings()
         val categories = ArrayList<Category>()
         val caArr = o.optJSONArray("categories")
         if (caArr != null) {

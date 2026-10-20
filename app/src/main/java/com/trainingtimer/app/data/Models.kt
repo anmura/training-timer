@@ -43,6 +43,8 @@ data class Complex(
 data class Settings(
     val beeps: Boolean = true,
     val vibration: Boolean = true,
+    /** Seconds of "get ready" countdown before the first exercise, 0..15 (0 = off). */
+    val countdown: Int = 5,
 )
 
 data class AppData(

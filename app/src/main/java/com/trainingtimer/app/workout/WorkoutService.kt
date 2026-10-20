@@ -123,13 +123,14 @@ class WorkoutService : Service() {
         val title = when (p.type) {
             PhaseType.WORK -> "${p.exercise.name} · $time"
             PhaseType.REST -> "Rest · $time"
+            PhaseType.PREPARE -> "Get ready · $time"
         }
         val detail = when (p.type) {
             PhaseType.WORK -> {
                 val round = if (p.rounds > 0) " · round ${p.round}/${p.rounds}" else ""
                 "Exercise ${p.workNumber} of ${s.totalWork}$round"
             }
-            PhaseType.REST -> "Next: ${p.exercise.name}"
+            PhaseType.REST, PhaseType.PREPARE -> "Next: ${p.exercise.name}"
         }
         return builder
             .setContentTitle(if (s.paused) "Paused — $title" else title)
