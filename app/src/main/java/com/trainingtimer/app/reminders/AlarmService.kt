@@ -45,7 +45,9 @@ class AlarmService : Service() {
             ACTION_RING -> {
                 val r = Repo.state.value.reminders.find { it.id == intent.getStringExtra(ReminderReceiver.EXTRA_ID) }
                 if (r == null) {
-                    stopSelf()
+                    // Deleted meanwhile. A service started in the foreground must still go foreground once.
+                    ServiceCompat.startForeground(this, NOTIFICATION_ID, placeholder(), fgsType())
+                    stopRinging(snoozeAfter = false)
                 } else {
                     ring(r)
                 }
@@ -59,8 +61,7 @@ class AlarmService : Service() {
     private fun ring(r: Reminder) {
         stopSound()
         _ringing.value = r
-        val type = if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
-        ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(r), type)
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(r), fgsType())
         startSound(r)
         startVibration()
         handler.removeCallbacks(timeout)
@@ -134,15 +135,25 @@ class AlarmService : Service() {
         vibrator = null
     }
 
-    private fun buildNotification(r: Reminder): Notification {
-        val nm = getSystemService(NotificationManager::class.java)
-        nm?.createNotificationChannel(
+    private fun fgsType(): Int = if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
+
+    private fun placeholder(): Notification {
+        createChannel()
+        return NotificationCompat.Builder(this, CHANNEL).setSmallIcon(R.drawable.ic_stat_timer).setContentTitle("Workout alarm").build()
+    }
+
+    private fun createChannel() {
+        getSystemService(NotificationManager::class.java)?.createNotificationChannel(
             NotificationChannel(CHANNEL, "Workout alarms", NotificationManager.IMPORTANCE_HIGH).apply {
                 description = "Alarm reminders that ring full screen"
                 setSound(null, null) // the service plays the alarm sound itself
                 enableVibration(false)
             },
         )
+    }
+
+    private fun buildNotification(r: Reminder): Notification {
+        createChannel()
         val full = PendingIntent.getActivity(
             this,
             0,

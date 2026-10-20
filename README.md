@@ -36,6 +36,12 @@ No account, no ads, no internet connection. All data stays on the phone.
 - Keeps running with the screen locked; pause, skip, Done (for reps sets) and end from the notification
 - The screen stays on during a workout
 
+**Reminders**
+- Settings › Reminders: set a time and repeat days (or once)
+- Remind about a specific workout (start it right from the reminder) or just "time to train"
+- Choose a notification (Start / Snooze) or an alarm that rings full screen, even on silent, with Start, Snooze and Dismiss
+- Alarms survive reboots and app updates; complex cards show their reminder
+
 **Import and export**
 - Import exercises and complexes from a JSON file; existing names are skipped and a summary lists what was added, skipped or not readable
 - Exercises a complex needs but your library doesn't have are created with a "?" icon
