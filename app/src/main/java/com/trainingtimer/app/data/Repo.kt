@@ -258,7 +258,39 @@ object Repo {
         d.copy(complexes = if (exists) d.complexes.map { if (it.id == complex.id) complex else it } else d.complexes + complex)
     }
 
-    fun deleteComplex(id: String) = update { d -> d.copy(complexes = d.complexes.filter { it.id != id }) }
+    fun deleteComplex(id: String) {
+        update { d ->
+            // Reminders for this workout become plain "time to train" nudges.
+            d.copy(
+                complexes = d.complexes.filter { it.id != id },
+                reminders = d.reminders.map { r ->
+                    if (r.complexId == id) {
+                        r.copy(complexId = null, message = d.complexes.find { it.id == id }?.name?.let { "Time for $it" } ?: "")
+                    } else r
+                },
+            )
+        }
+    }
+
+    // ---------- reminders ----------
+
+    fun saveReminder(reminder: Reminder) {
+        update { d ->
+            val exists = d.reminders.any { it.id == reminder.id }
+            d.copy(reminders = if (exists) d.reminders.map { if (it.id == reminder.id) reminder else it } else d.reminders + reminder)
+        }
+        com.trainingtimer.app.reminders.ReminderScheduler.schedule(context, reminder)
+    }
+
+    fun deleteReminder(id: String) {
+        com.trainingtimer.app.reminders.ReminderScheduler.cancel(context, id)
+        update { d -> d.copy(reminders = d.reminders.filter { it.id != id }) }
+    }
+
+    fun setReminderEnabled(id: String, enabled: Boolean) {
+        val r = _state.value.reminders.find { it.id == id } ?: return
+        saveReminder(r.copy(enabled = enabled))
+    }
 
     fun moveComplex(from: Int, to: Int) = update { d ->
         if (from !in d.complexes.indices || to !in d.complexes.indices) {
@@ -351,6 +383,46 @@ object Codec {
             .put("complexes", complexes)
             .put("settings", settings)
             .put("categories", categories)
+            .put("reminders", remindersToJson(d.reminders))
+    }
+
+    private fun remindersToJson(list: List<Reminder>): JSONArray {
+        val arr = JSONArray()
+        for (r in list) {
+            val days = JSONArray()
+            for (day in r.days) days.put(day)
+            val o = JSONObject()
+                .put("id", r.id).put("hour", r.hour).put("minute", r.minute).put("days", days)
+                .put("message", r.message).put("alarm", r.alarm).put("snooze", r.snoozeMinutes).put("enabled", r.enabled)
+            if (r.complexId != null) o.put("complex", r.complexId)
+            if (r.sound != null) o.put("sound", r.sound)
+            arr.put(o)
+        }
+        return arr
+    }
+
+    private fun remindersFromJson(arr: JSONArray?): List<Reminder> {
+        if (arr == null) return emptyList()
+        val out = ArrayList<Reminder>()
+        for (i in 0 until arr.length()) {
+            val o = arr.optJSONObject(i) ?: continue
+            val daysArr = o.optJSONArray("days")
+            val days = ArrayList<Int>()
+            if (daysArr != null) for (k in 0 until daysArr.length()) daysArr.optInt(k).takeIf { it in 1..7 }?.let { days += it }
+            out += Reminder(
+                id = o.optString("id").ifEmpty { newId() },
+                hour = o.optInt("hour", 7).coerceIn(0, 23),
+                minute = o.optInt("minute", 30).coerceIn(0, 59),
+                days = days.distinct().sorted(),
+                complexId = if (o.has("complex")) o.optString("complex") else null,
+                message = o.optString("message", ""),
+                alarm = o.optBoolean("alarm", false),
+                snoozeMinutes = o.optInt("snooze", 10).coerceIn(1, 60),
+                sound = if (o.has("sound")) o.optString("sound") else null,
+                enabled = o.optBoolean("enabled", true),
+            )
+        }
+        return out
     }
 
     private fun stepToJson(s: Step): JSONObject {
@@ -415,6 +487,6 @@ object Codec {
         }
         val known = categories.map { it.id }.toSet()
         val cleaned = exercises.map { e -> e.copy(categories = e.categories.filter { it in known }) }
-        return AppData(cleaned, complexes, settings, categories)
+        return AppData(cleaned, complexes, settings, categories, remindersFromJson(o.optJSONArray("reminders")))
     }
 }

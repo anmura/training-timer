@@ -108,5 +108,9 @@ object UiIcons {
     const val LIST = "M4 5h16M4 12h16M4 19h10"
     const val DUMBBELL = "M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"
     const val SKIPPED = "M5 5l14 14M12 22a10 10 0 1 0 0-20a10 10 0 1 0 0 20"
+    const val BELL = "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"
+    const val ALARM = "M12 21a8 8 0 1 0 0-16a8 8 0 1 0 0 16M12 9v4l2 2M5 3L2 6M22 6l-3-3"
+    const val HEART = "M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"
+    const val TRASH = "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
     const val WARNING = "M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"
 }

@@ -18,12 +18,26 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.trainingtimer.app.data.Complex
 import com.trainingtimer.app.data.Repo
 import com.trainingtimer.app.workout.WorkoutEngine
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
+/** Navigation asked for from outside the UI, e.g. by tapping a reminder. */
+object NavRequests {
+    private val _complexes = MutableStateFlow(0)
+    val complexes: StateFlow<Int> = _complexes
+
+    fun showComplexes() {
+        _complexes.value += 1
+    }
+}
 
 sealed interface Screen {
     data object Home : Screen
     data class ExerciseEditor(val id: String?) : Screen
     data class ComplexEditor(val id: String?) : Screen
     data object Settings : Screen
+    data object Reminders : Screen
+    data class ReminderEditor(val id: String?) : Screen
     data object Workout : Screen
 }
 
@@ -43,6 +57,15 @@ fun App(onStartWorkout: (Complex) -> Unit) {
     }
 
     BackHandler(enabled = stack.size > 1) { pop() }
+
+    val complexesRequest by NavRequests.complexes.collectAsStateWithLifecycle()
+    LaunchedEffect(complexesRequest) {
+        if (complexesRequest > 0 && stack.last() != Screen.Workout) {
+            stack.removeAll { it != Screen.Home }
+            if (stack.isEmpty()) stack.add(Screen.Home)
+            tab = 0
+        }
+    }
 
     // Show the workout whenever one is running (also when the app is reopened from the notification).
     val running = engine != null
@@ -81,7 +104,19 @@ fun App(onStartWorkout: (Complex) -> Unit) {
                     onClose = { pop() },
                 )
             }
-            Screen.Settings -> SettingsScreen(data.settings, onBack = { pop() })
+            Screen.Settings -> SettingsScreen(data, onBack = { pop() }, onReminders = { push(Screen.Reminders) })
+            Screen.Reminders -> RemindersScreen(
+                data = data,
+                onBack = { pop() },
+                onEdit = { push(Screen.ReminderEditor(it)) },
+            )
+            is Screen.ReminderEditor -> key(top) {
+                ReminderEditorScreen(
+                    existing = data.reminders.find { it.id == top.id },
+                    data = data,
+                    onClose = { pop() },
+                )
+            }
             Screen.Workout -> WorkoutScreen(onExit = {
                 stack.removeAll { it == Screen.Workout }
                 if (stack.isEmpty()) stack.add(Screen.Home)

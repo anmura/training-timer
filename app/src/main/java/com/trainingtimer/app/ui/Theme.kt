@@ -36,6 +36,8 @@ object C {
     /** Reps sets (counted, not timed). */
     val Sky = Color(0xFF6CC4FF)
     val SkyTrack = Color(0xFF1D2A33)
+    /** Background of alarm badges and warnings. */
+    val AlarmBg = Color(0xFF3A2A18)
 }
 
 /** Condensed bold system font, used for big numbers and display titles. */

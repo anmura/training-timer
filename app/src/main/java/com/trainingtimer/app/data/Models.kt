@@ -65,7 +65,52 @@ data class AppData(
     val complexes: List<Complex> = emptyList(),
     val settings: Settings = Settings(),
     val categories: List<Category> = emptyList(),
+    val reminders: List<Reminder> = emptyList(),
 )
+
+/**
+ * A workout reminder at [hour]:[minute].
+ * [days] are ISO days of week (1 = Monday … 7 = Sunday); empty = one time, then it switches itself off.
+ * [complexId] = remind about that workout; null = a plain "time to train" nudge with [message].
+ * [alarm] = ring full screen with sound; otherwise a quiet notification.
+ * [sound] is a ringtone URI for alarms; null = the phone's default alarm sound.
+ */
+data class Reminder(
+    val id: String = newId(),
+    val hour: Int = 7,
+    val minute: Int = 30,
+    val days: List<Int> = emptyList(),
+    val complexId: String? = null,
+    val message: String = "",
+    val alarm: Boolean = false,
+    val snoozeMinutes: Int = 10,
+    val sound: String? = null,
+    val enabled: Boolean = true,
+)
+
+private val DAY_SHORT = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+fun dayShort(day: Int): String = DAY_SHORT[(day - 1).coerceIn(0, 6)]
+
+/** "07:30" */
+fun Reminder.timeLabel(): String = "%02d:%02d".format(hour, minute)
+
+/** "Every day", "Weekdays", "Weekends", "Mon · Wed · Fri" or "Once". */
+fun Reminder.daysLabel(): String {
+    val d = days.sorted()
+    return when {
+        d.isEmpty() -> "Once"
+        d.size == 7 -> "Every day"
+        d == listOf(1, 2, 3, 4, 5) -> "Weekdays"
+        d == listOf(6, 7) -> "Weekends"
+        else -> d.joinToString(" · ") { dayShort(it) }
+    }
+}
+
+fun Reminder.title(complexes: List<Complex>): String =
+    complexes.find { it.id == complexId }?.name ?: message.ifBlank { DEFAULT_REMINDER_MESSAGE }
+
+const val DEFAULT_REMINDER_MESSAGE = "Time to train"
 
 /** Exercise ids in the order they are performed within one pass (cycles counted once). */
 fun Complex.exerciseIds(): List<String> = items.flatMap { item ->

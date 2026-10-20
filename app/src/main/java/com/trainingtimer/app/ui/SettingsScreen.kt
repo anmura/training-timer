@@ -1,6 +1,9 @@
 package com.trainingtimer.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,10 +27,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.trainingtimer.app.data.Repo
-import com.trainingtimer.app.data.Settings
+import com.trainingtimer.app.data.AppData
+import com.trainingtimer.app.data.UiIcons
+import com.trainingtimer.app.data.title
+import com.trainingtimer.app.reminders.ReminderScheduler
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
 
 @Composable
-fun SettingsScreen(settings: Settings, onBack: () -> Unit) {
+fun SettingsScreen(data: AppData, onBack: () -> Unit, onReminders: () -> Unit) {
+    val settings = data.settings
     val context = LocalContext.current
     val version = try {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
@@ -41,9 +51,13 @@ fun SettingsScreen(settings: Settings, onBack: () -> Unit) {
     ) {
         TopBar("Settings", onBack = onBack)
         Column(
-            Modifier.padding(horizontal = 16.dp),
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            SectionLabel("Reminders")
+            RemindersEntry(data, onReminders)
             SectionLabel("Workout start")
             Row(
                 Modifier
@@ -100,6 +114,44 @@ fun SettingsScreen(settings: Settings, onBack: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun RemindersEntry(data: AppData, onClick: () -> Unit) {
+    val on = data.reminders.count { it.enabled }
+    val next = ReminderScheduler.nextOf(data.reminders)
+    val text = when {
+        data.reminders.isEmpty() -> "Get a notification or an alarm when it's time to train"
+        next == null -> "${data.reminders.size} set · all off"
+        else -> "$on on · next ${ReminderScheduler.whenLabel(next.second)}, ${next.first.title(data.complexes)}"
+    }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 76.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(C.Surface)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = 14.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(C.LimeDim),
+            contentAlignment = Alignment.Center,
+        ) {
+            PathIcon(UiIcons.BELL, C.Lime, size = 26.dp, strokeWidth = 2f)
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text("Workout reminders", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
+            Text(text, fontSize = 13.sp, color = C.Muted, maxLines = 2)
+        }
+        Spacer(Modifier.width(8.dp))
+        PathIcon(UiIcons.FORWARD, C.Muted, size = 22.dp, strokeWidth = 2.2f)
     }
 }
 

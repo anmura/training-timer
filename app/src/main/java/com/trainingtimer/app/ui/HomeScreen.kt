@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -63,6 +65,9 @@ import com.trainingtimer.app.data.describe
 import com.trainingtimer.app.data.exerciseIds
 import com.trainingtimer.app.data.formatTime
 import com.trainingtimer.app.data.repsSetCount
+import com.trainingtimer.app.data.Reminder
+import com.trainingtimer.app.data.daysLabel
+import com.trainingtimer.app.data.timeLabel
 import com.trainingtimer.app.data.totalSeconds
 
 @Composable
@@ -238,6 +243,34 @@ private fun BottomNav(tab: Int, onTab: (Int) -> Unit) {
 
 // ---------- complexes ----------
 
+/** "Mon · Wed · Fri · 07:30" on a complex card; an alarm wins the icon if there are both kinds. */
+@Composable
+private fun ReminderChip(reminders: List<Reminder>) {
+    val first = reminders.sortedWith(compareBy({ it.hour }, { it.minute })).first()
+    val alarm = reminders.any { it.alarm }
+    val more = if (reminders.size > 1) " +${reminders.size - 1}" else ""
+    Row(
+        Modifier
+            .height(26.dp)
+            .clip(RoundedCornerShape(13.dp))
+            .background(if (alarm) C.AlarmBg else C.Surface2)
+            .padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val color = if (alarm) C.Orange else Color(0xFFC9CED3)
+        PathIcon(if (alarm) UiIcons.ALARM else UiIcons.BELL, color, size = 13.dp, strokeWidth = 2.4f)
+        Spacer(Modifier.width(5.dp))
+        Text(
+            "${first.daysLabel().replace(" · ", ", ")} · ${first.timeLabel()}$more",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = color,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
 @Composable
 private fun ComplexesTab(
     data: AppData,
@@ -281,6 +314,7 @@ private fun ComplexesTab(
             ComplexCard(
                 complex = c,
                 exById = exById,
+                reminders = data.reminders.filter { it.enabled && it.complexId == c.id },
                 handle = handle,
                 onStart = { onStart(c) },
                 onEdit = { onEdit(c.id) },
@@ -307,6 +341,7 @@ private fun ComplexesTab(
 private fun ComplexCard(
     complex: Complex,
     exById: Map<String, Exercise>,
+    reminders: List<Reminder>,
     handle: Modifier,
     onStart: () -> Unit,
     onEdit: () -> Unit,
@@ -332,6 +367,7 @@ private fun ComplexCard(
             ) {
                 Text(complex.name, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
                 Text(complex.describe(), fontSize = 13.sp, color = C.Muted)
+                if (reminders.isNotEmpty()) ReminderChip(reminders)
             }
             Text(
                 formatTime(complex.totalSeconds()) + if (complex.repsSetCount() > 0) "+" else "",
