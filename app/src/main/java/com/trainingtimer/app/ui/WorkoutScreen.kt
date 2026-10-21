@@ -434,19 +434,21 @@ private fun RoundSegments(r: RoundRingState, size: Dp) {
         val topLeft = Offset(inset, inset)
         val n = r.rounds.coerceAtLeast(1)
         val gap = if (n == 1) 0f else (if (n > 12) 3f else 8f)
+        // Round caps would close the narrow gaps between many segments, so use flat ends then.
+        val cap = if (n > 12) StrokeCap.Butt else StrokeCap.Round
         val span = 360f / n - gap
         for (i in 0 until n) {
             val start = -90f + i * (360f / n) + gap / 2f
             val done = i < r.round - 1
             val current = i == r.round - 1
-            drawArc(if (done) C.Lime else C.Surface3, start, span, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
+            drawArc(if (done) C.Lime else C.Surface3, start, span, false, topLeft, arcSize, style = Stroke(stroke, cap = cap))
             if (current) {
                 val sweep = span * r.sweep.coerceIn(0f, 1f)
                 if (r.announcing) {
                     // Soft glow while the segment draws in.
-                    drawArc(C.Lime.copy(alpha = 0.25f), start, sweep, false, topLeft, arcSize, style = Stroke(stroke * 3f, cap = StrokeCap.Round))
+                    drawArc(C.Lime.copy(alpha = 0.25f), start, sweep, false, topLeft, arcSize, style = Stroke(stroke * 3f, cap = cap))
                 }
-                drawArc(C.Lime, start, sweep, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
+                drawArc(C.Lime, start, sweep, false, topLeft, arcSize, style = Stroke(stroke, cap = cap))
             }
         }
     }
