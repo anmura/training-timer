@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -191,7 +192,13 @@ private fun SelectExercisesStep(
     BackHandler(onBack = onBack)
     val sorted = remember(exercises) { exercises.sortedBy { it.name.lowercase() } }
     var catFilter by remember { mutableStateOf<String?>(null) }
-    val shown = sorted.inCategory(catFilter)
+    var query by rememberSaveable { mutableStateOf("") }
+    // Search matches any part of the name, e.g. "гантел" finds "Жим гантелей лёжа".
+    val searched = remember(sorted, query) {
+        val q = query.trim()
+        if (q.isEmpty()) sorted else sorted.filter { it.name.contains(q, ignoreCase = true) }
+    }
+    val shown = searched.inCategory(catFilter)
     Column(
         Modifier
             .fillMaxSize()
@@ -199,15 +206,14 @@ private fun SelectExercisesStep(
     ) {
         TopBar("Create complex", onBack = onBack, subtitle = "Step 1 of 2 · Choose exercises")
         ProgressStrip(0.5f)
-        Text(
-            "Tick the exercises for this complex in the order you want to do them. You can set times, add cycles and reorder on the next step.",
-            fontSize = 14.sp,
-            color = C.Muted,
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp),
-        )
-        CategoryFilterRow(categories, sorted, catFilter, { catFilter = it }, Modifier.padding(bottom = 8.dp))
+        Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp)) {
+            SearchField(query, onChange = { query = it })
+        }
+        CategoryFilterRow(categories, searched, catFilter, { catFilter = it }, Modifier.padding(bottom = 8.dp))
         if (sorted.isEmpty()) {
             EmptyState("Your library is empty", "Add exercises on the Exercises tab first.", Modifier.weight(1f))
+        } else if (shown.isEmpty()) {
+            EmptyState("Nothing found", if (query.isNotBlank()) "No exercise matches “${query.trim()}”." else "No exercises in this category yet.", Modifier.weight(1f))
         } else {
             LazyColumn(
                 Modifier.weight(1f),

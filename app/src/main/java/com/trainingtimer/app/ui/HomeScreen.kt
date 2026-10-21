@@ -556,7 +556,7 @@ private fun ExercisesTab(
 }
 
 @Composable
-private fun SearchField(value: String, onChange: (String) -> Unit) {
+fun SearchField(value: String, onChange: (String) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
