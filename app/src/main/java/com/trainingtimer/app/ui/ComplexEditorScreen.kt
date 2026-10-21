@@ -99,6 +99,13 @@ private class ComplexDraft(existing: Complex?) {
         remove(singleKey)
     }
 
+    /** Turns a single exercise into a new cycle (×3) in the same place; more exercises can then be moved in. */
+    fun moveIntoNewCycle(singleKey: String) {
+        val i = indexOf(singleKey)
+        val single = items.getOrNull(i) as? ComplexItem.Single ?: return
+        items[i] = ComplexItem.Cycle(repeats = 3, steps = listOf(single.step.copy(key = newId())))
+    }
+
     /** Takes an exercise out of a cycle and puts it into the list right after that cycle. */
     fun moveOutOfCycle(cycleKey: String, stepKey: String) {
         val ci = indexOf(cycleKey)
@@ -344,9 +351,10 @@ private fun BuilderStep(
                         exercise = exById[item.step.exerciseId],
                         handle = handle,
                         onStep = { st -> draft.replace(item.key, item.copy(step = st)) },
-                        menu = cycleKeys.mapIndexed { n, key ->
-                            (if (cycleKeys.size == 1) "Move into cycle" else "Move into cycle ${n + 1}") to { draft.moveIntoCycle(item.key, key) }
-                        } + ("Remove from complex" to { draft.remove(item.key) }),
+                        menu = listOf("Move into new cycle" to { draft.moveIntoNewCycle(item.key) }) +
+                            cycleKeys.mapIndexed { n, key ->
+                                (if (cycleKeys.size == 1) "Move into cycle" else "Move into cycle ${n + 1}") to { draft.moveIntoCycle(item.key, key) }
+                            } + ("Remove from complex" to { draft.remove(item.key) }),
                     )
                     is ComplexItem.Cycle -> CycleBlock(
                         cycle = item,
