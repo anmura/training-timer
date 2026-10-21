@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -345,7 +346,7 @@ private fun BuilderStep(
                         onStep = { st -> draft.replace(item.key, item.copy(step = st)) },
                         menu = cycleKeys.mapIndexed { n, key ->
                             (if (cycleKeys.size == 1) "Move into cycle" else "Move into cycle ${n + 1}") to { draft.moveIntoCycle(item.key, key) }
-                        } + ("Remove" to { draft.remove(item.key) }),
+                        } + ("Remove from complex" to { draft.remove(item.key) }),
                     )
                     is ComplexItem.Cycle -> CycleBlock(
                         cycle = item,
@@ -464,30 +465,51 @@ private fun SingleRow(
     onStep: (Step) -> Unit,
     menu: List<Pair<String, () -> Unit>>,
 ) {
+    StepRow(
+        name = exercise?.name ?: "Deleted exercise",
+        icon = exercise?.icon ?: ExerciseIcons.DEFAULT,
+        step = item.step,
+        onStep = onStep,
+        menu = menu,
+        modifier = handle.clip(RoundedCornerShape(16.dp)),
+    )
+}
+
+/**
+ * One exercise in the builder. Top line: icon, the full name and the menu.
+ * Second line: the Time | Reps switch and the value, so long names never squeeze the controls.
+ */
+@Composable
+private fun StepRow(
+    name: String,
+    icon: String,
+    step: Step,
+    onStep: (Step) -> Unit,
+    menu: List<Pair<String, () -> Unit>>,
+    modifier: Modifier,
+) {
     Row(
-        handle
+        modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
             .background(C.Surface)
-            .padding(start = 2.dp, end = 2.dp, top = 8.dp, bottom = 8.dp),
+            .padding(start = 2.dp, end = 4.dp, top = 8.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PathIcon(UiIcons.GRIP, C.Faint, size = 20.dp, strokeWidth = 3f)
         Spacer(Modifier.width(4.dp))
-        ExerciseIcon(exercise?.icon ?: ExerciseIcons.DEFAULT, tileSize = 40.dp, iconSize = 22.dp)
-        Spacer(Modifier.width(10.dp))
-        StepNameAndType(exercise?.name ?: "Deleted exercise", item.step, onStep, Modifier.weight(1f))
-        StepValueStepper(item.step, onStep, buttonWidth = 30.dp, title = exercise?.name ?: "Set time")
-        OverflowMenu("Exercise options", menu, size = 36.dp)
-    }
-}
-
-/** Exercise name with the Time | Reps switch under it. */
-@Composable
-private fun StepNameAndType(name: String, step: Step, onStep: (Step) -> Unit, modifier: Modifier) {
-    Column(modifier.padding(end = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = C.Text, lineHeight = 18.sp)
-        StepTypeToggle(step.byReps) { onStep(step.copy(byReps = it)) }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ExerciseIcon(icon, tileSize = 40.dp, iconSize = 22.dp)
+                Spacer(Modifier.width(10.dp))
+                Text(name, Modifier.weight(1f), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = C.Text, lineHeight = 18.sp)
+                OverflowMenu("Exercise options", menu, size = 36.dp)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StepTypeToggle(step.byReps) { onStep(step.copy(byReps = it)) }
+                Spacer(Modifier.weight(1f).widthIn(min = 8.dp))
+                StepValueStepper(step, onStep, buttonWidth = 34.dp, title = name)
+            }
+        }
     }
 }
 
@@ -594,30 +616,17 @@ private fun CycleBlock(
             },
         ) { s, _, stepHandle ->
             val ex = exById[s.exerciseId]
-            Row(
-                stepHandle
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(C.Surface)
-                    .padding(start = 2.dp, top = 8.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PathIcon(UiIcons.GRIP, C.Faint, size = 18.dp, strokeWidth = 3f)
-                Spacer(Modifier.width(2.dp))
-                ExerciseIcon(ex?.icon ?: ExerciseIcons.DEFAULT, tileSize = 38.dp, iconSize = 22.dp)
-                Spacer(Modifier.width(8.dp))
-                val onStep: (Step) -> Unit = { st -> onChange(cycle.copy(steps = cycle.steps.map { if (it.key == s.key) st else it })) }
-                StepNameAndType(ex?.name ?: "Deleted exercise", s, onStep, Modifier.weight(1f))
-                StepValueStepper(s, onStep, buttonWidth = 28.dp, title = ex?.name ?: "Set time")
-                OverflowMenu(
-                    "Exercise options",
-                    listOf(
-                        "Move out of cycle" to { onMoveOut(s.key) },
-                        "Remove from cycle" to { onChange(cycle.copy(steps = cycle.steps.filter { it.key != s.key })) },
-                    ),
-                    size = 34.dp,
-                )
-            }
+            StepRow(
+                name = ex?.name ?: "Deleted exercise",
+                icon = ex?.icon ?: ExerciseIcons.DEFAULT,
+                step = s,
+                onStep = { st -> onChange(cycle.copy(steps = cycle.steps.map { if (it.key == s.key) st else it })) },
+                menu = listOf(
+                    "Move out of cycle" to { onMoveOut(s.key) },
+                    "Remove from complex" to { onChange(cycle.copy(steps = cycle.steps.filter { it.key != s.key })) },
+                ),
+                modifier = stepHandle.clip(RoundedCornerShape(14.dp)),
+            )
         }
         Row(
             Modifier
