@@ -8,7 +8,14 @@ fun newId(): String = UUID.randomUUID().toString()
  * icon is either a built-in icon key (see [ExerciseIcons]) or "img:<file name>" for a picture from the gallery.
  * [categories] holds category ids; an exercise can be in several categories or none.
  */
-data class Exercise(val id: String, val name: String, val icon: String, val categories: List<String> = emptyList())
+data class Exercise(
+    val id: String,
+    val name: String,
+    val icon: String,
+    val categories: List<String> = emptyList(),
+    /** Done with dumbbells, a kettlebell etc.: complexes get a weight field for it. */
+    val usesWeight: Boolean = false,
+)
 
 /** [color] is "#RRGGBB". */
 data class Category(val id: String, val name: String, val color: String)
@@ -27,7 +34,34 @@ data class Step(
     val key: String = newId(),
     val reps: Int = DEFAULT_REPS,
     val byReps: Boolean = false,
+    /** Weight for every round (only used when the exercise uses weight). */
+    val weight: Double = 0.0,
+    /** In a cycle: a weight per round instead of one for all. */
+    val perRound: Boolean = false,
+    /** Per-round weights; missing rounds come from the fill formula below. */
+    val roundWeights: List<Double> = emptyList(),
+    /** "Fill" settings: round i gets fillStart + fillStep × i, then any round can be changed by hand. */
+    val fillStart: Double = 0.0,
+    val fillStep: Double = 2.0,
 )
+
+/** What "Fill" gives for round [index] (0-based). */
+fun Step.plannedWeight(index: Int): Double = (fillStart + fillStep * index).coerceAtLeast(0.0)
+
+/** Per-round weights for a cycle of [rounds] rounds. */
+fun Step.roundWeightsFor(rounds: Int): List<Double> =
+    (0 until rounds.coerceAtLeast(1)).map { roundWeights.getOrNull(it) ?: plannedWeight(it) }
+
+/** Weight in round [round] (1-based; 0 outside cycles). */
+fun Step.weightFor(round: Int): Double =
+    if (perRound && round > 0) roundWeights.getOrNull(round - 1) ?: plannedWeight(round - 1) else weight
+
+/** "12 kg", "12.5 lb". */
+fun formatWeight(w: Double, unit: String): String {
+    val r = Math.round(w * 100) / 100.0
+    val text = if (r == Math.floor(r)) r.toLong().toString() else r.toString().trimEnd('0').trimEnd('.')
+    return "$text $unit"
+}
 
 const val DEFAULT_REPS = 10
 const val MAX_REPS = 999
@@ -58,6 +92,8 @@ data class Settings(
     val vibration: Boolean = true,
     /** Seconds of "get ready" countdown before the first exercise, 0..15 (0 = off). */
     val countdown: Int = 5,
+    /** "kg" or "lb". */
+    val weightUnit: String = "kg",
 )
 
 data class AppData(
@@ -128,6 +164,8 @@ data class FlatSet(
     val exerciseId: String,
     val seconds: Int,
     val reps: Int?,
+    /** Planned weight for this set (shown only if the exercise uses weight). */
+    val weight: Double,
     val round: Int,
     val rounds: Int,
     val restAfter: Int,
@@ -153,7 +191,7 @@ fun Complex.flatten(): List<FlatSet> {
             else -> restSeconds
         }
         val st = r.step
-        FlatSet(st.exerciseId, if (st.byReps) 0 else st.seconds, if (st.byReps) st.reps else null, r.round, r.rounds, rest)
+        FlatSet(st.exerciseId, if (st.byReps) 0 else st.seconds, if (st.byReps) st.reps else null, st.weightFor(r.round), r.round, r.rounds, rest)
     }
 }
 

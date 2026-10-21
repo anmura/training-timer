@@ -86,6 +86,27 @@ fun SettingsScreen(data: AppData, onBack: () -> Unit, onReminders: () -> Unit) {
                     plusLabel = "Longer countdown",
                 )
             }
+            SectionLabel("Units")
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(C.Surface)
+                    .padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Weight unit", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
+                    Text("For exercises that use weight", fontSize = 13.sp, color = C.Muted)
+                }
+                Spacer(Modifier.width(12.dp))
+                SegmentedPair(
+                    "kg", "lb",
+                    firstSelected = settings.weightUnit != "lb",
+                    color = C.Violet,
+                    onChange = { kg -> Repo.updateSettings(settings.copy(weightUnit = if (kg) "kg" else "lb")) },
+                )
+            }
             SectionLabel("Workout signals")
             SwitchRow(
                 title = "Beeps",

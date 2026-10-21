@@ -15,7 +15,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import com.trainingtimer.app.MainActivity
 import com.trainingtimer.app.R
+import com.trainingtimer.app.data.Repo
 import com.trainingtimer.app.data.formatTime
+import com.trainingtimer.app.data.formatWeight
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -127,7 +129,8 @@ class WorkoutService : Service() {
         val p = s.phase
         val time = formatTime(s.remainingSec)
         val title = when (p.type) {
-            PhaseType.WORK -> if (p.isReps) "${p.exercise.name} · ×${p.reps}" else "${p.exercise.name} · $time"
+            PhaseType.WORK -> (if (p.isReps) "${p.exercise.name} · ×${p.reps}" else "${p.exercise.name} · $time") +
+                (p.weight?.let { " · " + formatWeight(it, Repo.state.value.settings.weightUnit) } ?: "")
             PhaseType.REST -> "Rest · $time"
             PhaseType.PREPARE -> "Get ready · $time"
         }

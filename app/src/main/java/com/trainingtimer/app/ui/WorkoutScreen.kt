@@ -57,7 +57,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import com.trainingtimer.app.data.UiIcons
+import com.trainingtimer.app.data.Repo
 import com.trainingtimer.app.data.formatTime
+import com.trainingtimer.app.data.formatWeight
 import com.trainingtimer.app.workout.Phase
 import com.trainingtimer.app.workout.PhaseType
 import com.trainingtimer.app.workout.WorkoutEngine
@@ -294,7 +296,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             // The round ring sits outside the timer, so leave room for it.
-            val roundsRoom = if (rounds != null) ROUND_RING_ROOM * 2 else 0.dp
+            val roundsRoom = (if (rounds != null) ROUND_RING_ROOM * 2 else 0.dp) + (if (p.weight != null) 64.dp else 0.dp)
             val ringSize = minOf(maxWidth - 64.dp - roundsRoom, maxHeight - 150.dp - roundsRoom, 320.dp).coerceAtLeast(120.dp)
             val repsRingSize = minOf(maxWidth - 64.dp - roundsRoom, maxHeight - 240.dp - roundsRoom, 290.dp).coerceAtLeast(110.dp)
             Column(
@@ -304,6 +306,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
             ) {
                 if (p.isReps) {
                     RepsRing(s, repsRingSize, rounds)
+                    p.weight?.let { WeightPill(it, p) }
                     BigButton(
                         "Done",
                         onClick = { WorkoutEngine.done() },
@@ -345,6 +348,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                     }
                 }
                 }
+                p.weight?.let { WeightPill(it, p) }
                 Controls(
                     paused = s.paused,
                     accent = C.Lime,
@@ -381,6 +385,30 @@ private fun RepsRing(s: WorkoutState, ringSize: Dp, rounds: RoundRingState?) {
             PathIcon(UiIcons.TIMER, C.Muted, size = 16.dp, strokeWidth = 2f)
             Spacer(Modifier.width(6.dp))
             Text("${formatTime((s.elapsedMs / 1000).toInt())} on this set", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = C.Muted)
+        }
+    }
+}
+
+private fun weightLabel(w: Double): String = formatWeight(w, Repo.state.value.settings.weightUnit)
+
+/** Planned weight for the current set; the workout only shows it (it is set in the complex). */
+@Composable
+private fun WeightPill(weight: Double, p: Phase) {
+    Row(
+        Modifier
+            .height(48.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(C.VioletBg)
+            .border(1.5.dp, C.VioletBorder, RoundedCornerShape(24.dp))
+            .padding(start = 14.dp, end = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PathIcon(UiIcons.WEIGHT, C.Violet, size = 22.dp, strokeWidth = 2f)
+        Spacer(Modifier.width(10.dp))
+        Text(weightLabel(weight), fontFamily = Condensed, fontSize = 30.sp, color = C.Violet)
+        if (p.rounds > 0) {
+            Spacer(Modifier.width(10.dp))
+            Text("round ${p.round} of ${p.rounds}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = C.Muted)
         }
     }
 }
@@ -506,7 +534,10 @@ private fun NextCard(s: WorkoutState) {
                 Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.2.sp, color = C.Muted)
                 Text(next.exercise.name, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = C.Text, lineHeight = 21.sp)
             }
-            Text(next.valueLabel(), fontFamily = Condensed, fontSize = 26.sp, color = if (next.reps != null) C.Sky else C.Text)
+            Column(horizontalAlignment = Alignment.End) {
+                Text(next.valueLabel(), fontFamily = Condensed, fontSize = 26.sp, color = if (next.reps != null) C.Sky else C.Text)
+                next.weight?.let { Text(weightLabel(it), fontFamily = Condensed, fontSize = 18.sp, color = C.Violet) }
+            }
         }
     }
 }
@@ -624,6 +655,7 @@ private fun RestView(s: WorkoutState, onClose: () -> Unit) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     FitText(p.exercise.name, maxFontSize = 36.sp, minFontSize = 18.sp, maxLines = 5, fontFamily = Condensed)
                     Text(p.valueLabel(), fontFamily = Condensed, fontSize = 30.sp, color = if (p.reps != null) C.Sky else C.Lime)
+                    p.weight?.let { Text(weightLabel(it), fontFamily = Condensed, fontSize = 24.sp, color = C.Violet) }
                 }
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -671,7 +703,7 @@ private fun ThenRow(p: Phase) {
         Spacer(Modifier.width(12.dp))
         val round = if (p.rounds > 0) " · round ${p.round}" else ""
         Text("${p.exercise.name}$round", Modifier.weight(1f), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD9D2CB), lineHeight = 19.sp)
-        Text(p.valueLabel(), fontFamily = Condensed, fontSize = 20.sp, color = C.RestMuted)
+        Text(p.valueLabel() + (p.weight?.let { " · " + weightLabel(it) } ?: ""), fontFamily = Condensed, fontSize = 20.sp, color = C.RestMuted)
     }
 }
 

@@ -23,6 +23,9 @@ data class ImportResult(
  *   "complexes": [ { "name": "Morning HIIT", "rest": 15, "items": [
  *       { "exercise": "Burpees", "time": 30 },
  *       { "exercise": "Push-ups", "reps": 12 },                              (reps set: ends when the user taps Done)
+ *       { "exercise": "Goblet squat", "reps": 12, "weight": 16 },            (weight in the app's unit)
+ *       { "cycle": { "repeats": 3, "items": [ { "exercise": "Press", "reps": 10, "weights": [10, 12, 14] } ] } },
+ *   exercises may have "usesWeight": true
  *       { "cycle": { "repeats": 3, "items": [ { "exercise": "Plank", "time": 45 } ] } } ] } ]
  * }
  * "complexes" is optional. A plain list of exercises is also accepted.
@@ -103,11 +106,13 @@ object ImportExport {
                 val name: String
                 var icon: String? = null
                 var catNames: List<String> = emptyList()
+                var usesWeight = false
                 when (entry) {
                     is String -> name = entry.trim()
                     is JSONObject -> {
                         name = stringOrEmpty(entry, "name")
                         icon = stringOrEmpty(entry, "icon").lowercase().ifEmpty { null }
+                        usesWeight = entry.optBoolean("usesWeight", false)
                         val ca = entry.optJSONArray("categories")
                         if (ca != null) {
                             catNames = (0 until ca.length()).mapNotNull { k -> (ca.opt(k) as? String)?.trim()?.ifEmpty { null } }
@@ -128,7 +133,7 @@ object ImportExport {
                     continue
                 }
                 val catIds = catNames.map { categoryFor(it, null).id }.distinct()
-                val ex = Exercise(newId(), name, if (icon != null && ExerciseIcons.has(icon)) icon else ExerciseIcons.UNKNOWN, catIds)
+                val ex = Exercise(newId(), name, if (icon != null && ExerciseIcons.has(icon)) icon else ExerciseIcons.UNKNOWN, catIds, usesWeight)
                 byName[key] = ex
                 added += ex
             }
@@ -184,6 +189,17 @@ object ImportExport {
             }
         }
 
+        // New exercises that get a weight in an imported complex are weighted exercises.
+        val weighted = addedComplexes.flatMap { cx ->
+            cx.items.flatMap { item ->
+                when (item) {
+                    is ComplexItem.Single -> listOf(item.step)
+                    is ComplexItem.Cycle -> item.steps
+                }
+            }
+        }.filter { it.weight > 0 || it.perRound }.map { it.exerciseId }.toSet()
+        for (k in added.indices) if (added[k].id in weighted) added[k] = added[k].copy(usesWeight = true)
+
         Repo.addImported(added, addedComplexes, newCategories)
         return ImportResult(
             addedExercises = added.map { it.name },
@@ -231,10 +247,24 @@ object ImportExport {
         val ex = byName[exName.lowercase()] ?: create(exName)
         val seconds = o.optInt("time", 30).coerceIn(1, 3600)
         val reps = o.optInt("reps", 0)
-        return if (reps > 0) {
+        val base = if (reps > 0) {
             Step(ex.id, seconds, reps = reps.coerceAtMost(MAX_REPS), byReps = true)
         } else {
             Step(ex.id, seconds)
+        }
+        val weight = o.optDouble("weight", 0.0).takeIf { !it.isNaN() && it >= 0 } ?: 0.0
+        val wArr = o.optJSONArray("weights")
+        val weights = wArr?.let { a -> (0 until a.length()).map { a.optDouble(it, 0.0).coerceAtLeast(0.0) } } ?: emptyList()
+        return if (weights.isNotEmpty()) {
+            base.copy(
+                perRound = true,
+                roundWeights = weights,
+                weight = weights.first(),
+                fillStart = weights.first(),
+                fillStep = if (weights.size > 1) weights[1] - weights[0] else 0.0,
+            )
+        } else {
+            base.copy(weight = weight, fillStart = weight)
         }
     }
 
@@ -267,10 +297,10 @@ object ImportExport {
             val items = JSONArray()
             for (item in c.items) {
                 when (item) {
-                    is ComplexItem.Single -> byId[item.step.exerciseId]?.let { items.put(stepJson(it, item.step)) }
+                    is ComplexItem.Single -> byId[item.step.exerciseId]?.let { items.put(stepJson(it, item.step, 0)) }
                     is ComplexItem.Cycle -> {
                         val steps = JSONArray()
-                        for (s in item.steps) byId[s.exerciseId]?.let { steps.put(stepJson(it, s)) }
+                        for (s in item.steps) byId[s.exerciseId]?.let { steps.put(stepJson(it, s, item.repeats)) }
                         val c = JSONObject().put("repeats", item.repeats).put("items", steps)
                         if (item.rest != null) c.put("rest", item.rest)
                         items.put(JSONObject().put("cycle", c))
@@ -287,9 +317,19 @@ object ImportExport {
             .toString(2)
     }
 
-    private fun stepJson(e: Exercise, s: Step): JSONObject {
+    private fun stepJson(e: Exercise, s: Step, rounds: Int): JSONObject {
         val o = JSONObject().put("exercise", e.name)
-        return if (s.byReps) o.put("reps", s.reps) else o.put("time", s.seconds)
+        if (s.byReps) o.put("reps", s.reps) else o.put("time", s.seconds)
+        if (e.usesWeight) {
+            if (s.perRound && rounds > 0) {
+                val arr = JSONArray()
+                for (w in s.roundWeightsFor(rounds)) arr.put(w)
+                o.put("weights", arr)
+            } else {
+                o.put("weight", s.weight)
+            }
+        }
+        return o
     }
 
     private fun exercisesJson(d: AppData): JSONArray {
@@ -297,6 +337,7 @@ object ImportExport {
         for (e in d.exercises.sortedBy { it.name.lowercase() }) {
             val o = JSONObject().put("name", e.name)
             if (!e.icon.startsWith("img:")) o.put("icon", e.icon)
+            if (e.usesWeight) o.put("usesWeight", true)
             val names = e.categories.mapNotNull { id -> d.categories.find { it.id == id }?.name }
             if (names.isNotEmpty()) {
                 val ca = JSONArray()

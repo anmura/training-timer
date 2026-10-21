@@ -1,5 +1,9 @@
 package com.trainingtimer.app.ui
 
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.foundation.layout.size
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -54,12 +58,75 @@ import com.trainingtimer.app.data.UiIcons
 import com.trainingtimer.app.data.newId
 
 @OptIn(ExperimentalLayoutApi::class)
+/** On for dumbbells, kettlebells etc.: complexes then get a weight field for this exercise. */
+@Composable
+private fun UsesWeightRow(on: Boolean, onChange: (Boolean) -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(C.Surface)
+            .border(1.5.dp, if (on) C.VioletBorder else Color.Transparent, RoundedCornerShape(20.dp)),
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .toggleable(value = on, role = Role.Switch, onValueChange = onChange)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(C.VioletDim),
+                contentAlignment = Alignment.Center,
+            ) {
+                PathIcon(UiIcons.WEIGHT, C.Violet, size = 22.dp, strokeWidth = 2f)
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Uses weight", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
+                Text("Show a weight field for this exercise in complexes", fontSize = 13.sp, color = C.Muted, lineHeight = 17.sp)
+            }
+            Spacer(Modifier.width(8.dp))
+            Switch(
+                checked = on,
+                onCheckedChange = null,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = C.OnLime,
+                    checkedTrackColor = C.Violet,
+                    uncheckedThumbColor = C.Muted,
+                    uncheckedTrackColor = C.Surface2,
+                    uncheckedBorderColor = C.Faint,
+                ),
+            )
+        }
+        if (on) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(C.Surface2),
+            )
+            Text(
+                "You set how heavy in each complex. The unit (kg or lb) is in Settings.",
+                fontSize = 13.sp,
+                color = Color(0xFFD8CCE8),
+                lineHeight = 18.sp,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
+    }
+}
+
 @Composable
 fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClose: () -> Unit) {
     val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf(existing?.name ?: "") }
     var icon by rememberSaveable { mutableStateOf(existing?.icon ?: "plank") }
     var selectedCats by remember { mutableStateOf(existing?.categories ?: emptyList()) }
+    var usesWeight by rememberSaveable { mutableStateOf(existing?.usesWeight ?: false) }
     var newCategory by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -80,7 +147,7 @@ fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClos
             n.isEmpty() -> error = "Enter a name"
             Repo.nameExists(n, existing?.id) -> error = "An exercise with this name already exists"
             else -> {
-                Repo.saveExercise(Exercise(existing?.id ?: newId(), n, icon, selectedCats.filter { id -> categories.any { it.id == id } }))
+                Repo.saveExercise(Exercise(existing?.id ?: newId(), n, icon, selectedCats.filter { id -> categories.any { it.id == id } }, usesWeight))
                 onClose()
             }
         }
@@ -159,6 +226,7 @@ fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClos
                     Text("New category", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = C.Lime)
                 }
             }
+            UsesWeightRow(usesWeight) { usesWeight = it }
             Text("Icon", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = C.Muted)
             // A plain (non-lazy) grid so the whole page scrolls together.
             val tiles = buildList<@Composable () -> Unit> {

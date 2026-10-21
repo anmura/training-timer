@@ -350,7 +350,7 @@ object Codec {
         for (e in d.exercises) {
             val cats = JSONArray()
             for (id in e.categories) cats.put(id)
-            exercises.put(JSONObject().put("id", e.id).put("name", e.name).put("icon", e.icon).put("cats", cats))
+            exercises.put(JSONObject().put("id", e.id).put("name", e.name).put("icon", e.icon).put("cats", cats).put("weight", e.usesWeight))
         }
         val categories = JSONArray()
         for (c in d.categories) {
@@ -378,6 +378,7 @@ object Codec {
             )
         }
         val settings = JSONObject().put("beeps", d.settings.beeps).put("vibration", d.settings.vibration).put("countdown", d.settings.countdown)
+            .put("unit", d.settings.weightUnit)
         return JSONObject()
             .put("version", 1)
             .put("exercises", exercises)
@@ -429,6 +430,13 @@ object Codec {
     private fun stepToJson(s: Step): JSONObject {
         val o = JSONObject().put("ex", s.exerciseId).put("sec", s.seconds).put("reps", s.reps)
         if (s.byReps) o.put("byReps", true)
+        o.put("wt", s.weight).put("fs", s.fillStart).put("fst", s.fillStep)
+        if (s.perRound) o.put("pr", true)
+        if (s.roundWeights.isNotEmpty()) {
+            val rw = JSONArray()
+            for (w in s.roundWeights) rw.put(w)
+            o.put("rw", rw)
+        }
         return o
     }
 
@@ -437,6 +445,11 @@ object Codec {
         seconds = o.getInt("sec"),
         reps = o.optInt("reps", DEFAULT_REPS).coerceIn(1, MAX_REPS),
         byReps = o.optBoolean("byReps", false),
+        weight = o.optDouble("wt", 0.0).takeIf { !it.isNaN() } ?: 0.0,
+        perRound = o.optBoolean("pr", false),
+        roundWeights = o.optJSONArray("rw")?.let { a -> (0 until a.length()).map { a.optDouble(it, 0.0) } } ?: emptyList(),
+        fillStart = o.optDouble("fs", 0.0).takeIf { !it.isNaN() } ?: 0.0,
+        fillStep = o.optDouble("fst", 2.0).takeIf { !it.isNaN() } ?: 2.0,
     )
 
     fun fromJson(o: JSONObject): AppData {
@@ -448,7 +461,7 @@ object Codec {
                 val catArr = e.optJSONArray("cats")
                 val cats = ArrayList<String>()
                 if (catArr != null) for (k in 0 until catArr.length()) cats += catArr.getString(k)
-                exercises += Exercise(e.getString("id"), e.getString("name"), e.optString("icon", ExerciseIcons.DEFAULT), cats)
+                exercises += Exercise(e.getString("id"), e.getString("name"), e.optString("icon", ExerciseIcons.DEFAULT), cats, e.optBoolean("weight", false))
             }
         }
         val complexes = ArrayList<Complex>()
@@ -477,7 +490,12 @@ object Codec {
             }
         }
         val s = o.optJSONObject("settings")
-        val settings = if (s != null) Settings(s.optBoolean("beeps", true), s.optBoolean("vibration", true), s.optInt("countdown", 5).coerceIn(0, 15)) else Settings()
+        val settings = if (s != null) Settings(
+            s.optBoolean("beeps", true),
+            s.optBoolean("vibration", true),
+            s.optInt("countdown", 5).coerceIn(0, 15),
+            if (s.optString("unit") == "lb") "lb" else "kg",
+        ) else Settings()
         val categories = ArrayList<Category>()
         val caArr = o.optJSONArray("categories")
         if (caArr != null) {

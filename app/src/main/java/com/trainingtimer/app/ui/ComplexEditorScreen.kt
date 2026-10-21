@@ -362,6 +362,7 @@ private fun BuilderStep(
                             cycleKeys.mapIndexed { n, key ->
                                 (if (cycleKeys.size == 1) "Move into cycle" else "Move into cycle ${n + 1}") to { draft.moveIntoCycle(item.key, key) }
                             } + ("Remove from complex" to { draft.remove(item.key) }),
+                        unit = data.settings.weightUnit,
                     )
                     is ComplexItem.Cycle -> CycleBlock(
                         cycle = item,
@@ -373,6 +374,7 @@ private fun BuilderStep(
                         onMoveOut = { stepKey -> draft.moveOutOfCycle(item.key, stepKey) },
                         onAddExercises = { pickerForCycle = item.key },
                         onCopy = { draft.copyCycle(item.key) },
+                        unit = data.settings.weightUnit,
                         onRemove = { draft.remove(item.key) },
                     )
                 }
@@ -480,6 +482,7 @@ private fun SingleRow(
     handle: Modifier,
     onStep: (Step) -> Unit,
     menu: List<Pair<String, () -> Unit>>,
+    unit: String,
 ) {
     StepRow(
         name = exercise?.name ?: "Deleted exercise",
@@ -487,6 +490,9 @@ private fun SingleRow(
         step = item.step,
         onStep = onStep,
         menu = menu,
+        usesWeight = exercise?.usesWeight == true,
+        unit = unit,
+        rounds = 0,
         modifier = handle.clip(RoundedCornerShape(16.dp)),
     )
 }
@@ -503,6 +509,9 @@ private fun StepRow(
     onStep: (Step) -> Unit,
     menu: List<Pair<String, () -> Unit>>,
     modifier: Modifier,
+    usesWeight: Boolean = false,
+    unit: String = "kg",
+    rounds: Int = 0,
 ) {
     Row(
         modifier
@@ -525,6 +534,7 @@ private fun StepRow(
                 Spacer(Modifier.weight(1f).widthIn(min = 8.dp))
                 StepValueStepper(step, onStep, buttonWidth = 34.dp, title = name)
             }
+            if (usesWeight) WeightSection(step, onStep, unit, rounds, name)
         }
     }
 }
@@ -553,6 +563,7 @@ private fun CycleBlock(
     onAddExercises: () -> Unit,
     onCopy: () -> Unit,
     onRemove: () -> Unit,
+    unit: String,
 ) {
     val shape = RoundedCornerShape(20.dp)
     Column(
@@ -638,6 +649,9 @@ private fun CycleBlock(
                 icon = ex?.icon ?: ExerciseIcons.DEFAULT,
                 step = s,
                 onStep = { st -> onChange(cycle.copy(steps = cycle.steps.map { if (it.key == s.key) st else it })) },
+                usesWeight = ex?.usesWeight == true,
+                unit = unit,
+                rounds = cycle.repeats,
                 menu = listOf(
                     "Move out of cycle" to { onMoveOut(s.key) },
                     "Remove from complex" to { onChange(cycle.copy(steps = cycle.steps.filter { it.key != s.key })) },

@@ -43,6 +43,8 @@ data class Phase(
     val reps: Int? = null,
     /** True for the first exercise of a cycle round: the moment a new round begins. */
     val roundStart: Boolean = false,
+    /** Planned weight, only for exercises that use weight. */
+    val weight: Double? = null,
 ) {
     val isReps: Boolean get() = type == PhaseType.WORK && reps != null
 }
@@ -83,11 +85,11 @@ fun buildPhases(complex: Complex, exercises: List<Exercise>): List<Phase> {
     sets.forEachIndexed { i, (f, ex) ->
         val prev = sets.getOrNull(i - 1)?.first
         val roundStart = f.rounds > 0 && (prev == null || prev.round != f.round || prev.rounds != f.rounds)
-        out += Phase(PhaseType.WORK, ex, f.seconds, i + 1, f.round, f.rounds, f.reps, roundStart)
+        out += Phase(PhaseType.WORK, ex, f.seconds, i + 1, f.round, f.rounds, f.reps, roundStart, f.weight.takeIf { ex.usesWeight })
         // No rest after the last exercise.
         if (i < sets.lastIndex && f.restAfter > 0) {
             val (next, nextEx) = sets[i + 1]
-            out += Phase(PhaseType.REST, nextEx, f.restAfter, i + 2, next.round, next.rounds, next.reps)
+            out += Phase(PhaseType.REST, nextEx, f.restAfter, i + 2, next.round, next.rounds, next.reps, weight = next.weight.takeIf { nextEx.usesWeight })
         }
     }
     return out
@@ -116,7 +118,7 @@ object WorkoutEngine {
         val countdown = Repo.state.value.settings.countdown.coerceIn(0, 15)
         val phases = if (countdown > 0) {
             val f = built[0]
-            listOf(Phase(PhaseType.PREPARE, f.exercise, countdown, 1, f.round, f.rounds, f.reps)) + built
+            listOf(Phase(PhaseType.PREPARE, f.exercise, countdown, 1, f.round, f.rounds, f.reps, weight = f.weight)) + built
         } else {
             built
         }

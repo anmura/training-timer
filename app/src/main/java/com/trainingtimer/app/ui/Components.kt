@@ -434,6 +434,20 @@ fun RepsDialog(title: String, initial: Int, onDismiss: () -> Unit, onConfirm: (I
     )
 }
 
+/** Two-option switch, e.g. kg | lb or Same | Per round. [onChange] gets true for the first option. */
+@Composable
+fun SegmentedPair(first: String, second: String, firstSelected: Boolean, color: Color, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(C.Surface2)
+            .padding(2.dp),
+    ) {
+        TypeSegment(first, selected = firstSelected, color = color) { onChange(true) }
+        TypeSegment(second, selected = !firstSelected, color = color) { onChange(false) }
+    }
+}
+
 /** Small Time | Reps switch under an exercise name in the complex builder. */
 @Composable
 fun StepTypeToggle(byReps: Boolean, onChange: (Boolean) -> Unit) {

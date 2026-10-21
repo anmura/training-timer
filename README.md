@@ -36,6 +36,12 @@ No account, no ads, no internet connection. All data stays on the phone.
 - Keeps running with the screen locked; pause, skip, Done (for reps sets) and end from the notification
 - The screen stays on during a workout
 
+**Weights**
+- Mark an exercise as **Uses weight** in its settings; choose kg or lb in Settings
+- Set the weight in the complex: one weight, or in a cycle a weight **per round**
+- Per round: **Fill** from a start weight and a step (e.g. 10 kg, +2), then change any round by hand; edited rounds are marked
+- During the workout the planned weight is shown with the set and in the Next card
+
 **Reminders**
 - Settings › Reminders: any number of reminders, each with a time and repeat days (every day, weekdays, chosen days, or once)
 - Remind about a specific workout (start it right from the reminder) or just "time to train" with your own message
@@ -151,6 +157,7 @@ The built-in programs live in [`app/src/main/assets`](app/src/main/assets) and u
 - All sections are optional; a plain list of exercise names is also accepted.
 - `rest` and `time` are in seconds. A cycle's `rest` is optional; without it the complex's rest is used.
 - Use `reps` instead of `time` for a set counted in repetitions; it ends when you tap Done.
+- `weight` (a number, in the app's unit) sets the weight of a set; in a cycle `weights` gives one per round, e.g. `[10, 12, 14]`. Exercises can have `"usesWeight": true`.
 - Categories are matched by name and created if they don't exist.
 - An unknown or missing `icon` becomes the "?" icon.
 - Exercises and complexes whose names already exist are skipped.

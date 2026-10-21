@@ -38,6 +38,11 @@ object C {
     val SkyTrack = Color(0xFF1D2A33)
     /** Background of alarm badges and warnings. */
     val AlarmBg = Color(0xFF3A2A18)
+    /** Weights. */
+    val Violet = Color(0xFFC49BFF)
+    val VioletBg = Color(0xFF221C2C)
+    val VioletDim = Color(0xFF2A2238)
+    val VioletBorder = Color(0xFF4A3A66)
 }
 
 /** Condensed bold system font, used for big numbers and display titles. */
