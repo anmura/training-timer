@@ -106,6 +106,13 @@ private class ComplexDraft(existing: Complex?) {
         items[i] = ComplexItem.Cycle(repeats = 3, steps = listOf(single.step.copy(key = newId())))
     }
 
+    /** Puts a copy of a cycle (same exercises, repeats and rest) right below it. */
+    fun copyCycle(cycleKey: String) {
+        val i = indexOf(cycleKey)
+        val cycle = items.getOrNull(i) as? ComplexItem.Cycle ?: return
+        items.add(i + 1, cycle.copy(key = newId(), steps = cycle.steps.map { it.copy(key = newId()) }))
+    }
+
     /** Takes an exercise out of a cycle and puts it into the list right after that cycle. */
     fun moveOutOfCycle(cycleKey: String, stepKey: String) {
         val ci = indexOf(cycleKey)
@@ -365,6 +372,7 @@ private fun BuilderStep(
                         onChange = { draft.replace(item.key, it) },
                         onMoveOut = { stepKey -> draft.moveOutOfCycle(item.key, stepKey) },
                         onAddExercises = { pickerForCycle = item.key },
+                        onCopy = { draft.copyCycle(item.key) },
                         onRemove = { draft.remove(item.key) },
                     )
                 }
@@ -543,6 +551,7 @@ private fun CycleBlock(
     onMoveOut: (String) -> Unit,
     handle: Modifier,
     onAddExercises: () -> Unit,
+    onCopy: () -> Unit,
     onRemove: () -> Unit,
 ) {
     val shape = RoundedCornerShape(20.dp)
@@ -579,7 +588,7 @@ private fun CycleBlock(
                 minusLabel = "Fewer repeats",
                 plusLabel = "More repeats",
             )
-            OverflowMenu("Cycle options", listOf("Remove cycle" to onRemove), size = 36.dp)
+            OverflowMenu("Cycle options", listOf("Copy cycle" to onCopy, "Remove cycle" to onRemove), size = 36.dp)
         }
         Row(
             Modifier
