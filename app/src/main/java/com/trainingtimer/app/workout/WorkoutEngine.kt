@@ -41,6 +41,8 @@ data class Phase(
     val rounds: Int,
     /** Non-null for a reps set: no timer, it ends when the user taps Done. [seconds] is 0 then. */
     val reps: Int? = null,
+    /** True for the first exercise of a cycle round: the moment a new round begins. */
+    val roundStart: Boolean = false,
 ) {
     val isReps: Boolean get() = type == PhaseType.WORK && reps != null
 }
@@ -79,7 +81,9 @@ fun buildPhases(complex: Complex, exercises: List<Exercise>): List<Phase> {
     val sets = complex.flatten().mapNotNull { f -> byId[f.exerciseId]?.let { ex -> f to ex } }
     val out = ArrayList<Phase>()
     sets.forEachIndexed { i, (f, ex) ->
-        out += Phase(PhaseType.WORK, ex, f.seconds, i + 1, f.round, f.rounds, f.reps)
+        val prev = sets.getOrNull(i - 1)?.first
+        val roundStart = f.rounds > 0 && (prev == null || prev.round != f.round || prev.rounds != f.rounds)
+        out += Phase(PhaseType.WORK, ex, f.seconds, i + 1, f.round, f.rounds, f.reps, roundStart)
         // No rest after the last exercise.
         if (i < sets.lastIndex && f.restAfter > 0) {
             val (next, nextEx) = sets[i + 1]
@@ -263,6 +267,19 @@ object WorkoutEngine {
 
     private fun signalPhaseStart(p: Phase) {
         val settings = Repo.state.value.settings
+        if (p.type == PhaseType.WORK && p.roundStart) {
+            // A new cycle round: three quick beeps and three short buzzes, unlike a normal switch.
+            if (settings.beeps) {
+                scope.launch {
+                    repeat(3) {
+                        toneGenerator()?.startTone(ToneGenerator.TONE_PROP_BEEP2, 120)
+                        delay(170)
+                    }
+                }
+            }
+            if (settings.vibration) vibrate(longArrayOf(0, 90, 90, 90, 90, 160))
+            return
+        }
         if (settings.beeps) {
             toneGenerator()?.startTone(
                 if (p.type == PhaseType.WORK) ToneGenerator.TONE_PROP_BEEP2 else ToneGenerator.TONE_PROP_ACK,

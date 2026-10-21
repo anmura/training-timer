@@ -1,6 +1,14 @@
 package com.trainingtimer.app.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -46,6 +55,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import com.trainingtimer.app.data.UiIcons
 import com.trainingtimer.app.data.formatTime
 import com.trainingtimer.app.workout.Phase
@@ -109,8 +119,18 @@ private fun KeepScreenOn() {
 }
 
 @Composable
-private fun WorkoutHeader(s: WorkoutState, onClose: () -> Unit, muted: Color, badgeBg: Color, badgeFg: Color) {
+private fun WorkoutHeader(
+    s: WorkoutState,
+    onClose: () -> Unit,
+    muted: Color,
+    badgeBg: Color,
+    badgeFg: Color,
+    flash: Boolean = false,
+) {
     val p = s.phase
+    val badgeScale by animateFloatAsState(if (flash) 1.15f else 1f, tween(300), label = "badgeScale")
+    val bg by animateColorAsState(if (flash) C.Lime else badgeBg, tween(300), label = "badgeBg")
+    val fg by animateColorAsState(if (flash) C.OnLime else badgeFg, tween(300), label = "badgeFg")
     Row(
         Modifier
             .fillMaxWidth()
@@ -134,15 +154,16 @@ private fun WorkoutHeader(s: WorkoutState, onClose: () -> Unit, muted: Color, ba
             Row(
                 Modifier
                     .padding(end = 8.dp)
+                    .scale(badgeScale)
                     .height(32.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(badgeBg)
+                    .background(bg)
                     .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PathIcon(UiIcons.REPEAT, badgeFg, size = 16.dp, strokeWidth = 2.2f)
+                PathIcon(UiIcons.REPEAT, fg, size = 16.dp, strokeWidth = 2.2f)
                 Spacer(Modifier.width(6.dp))
-                Text("${p.round}/${p.rounds}", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = badgeFg, maxLines = 1)
+                Text("${p.round}/${p.rounds}", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = fg, maxLines = 1)
             }
         }
     }
@@ -233,12 +254,24 @@ private fun fractionLeft(s: WorkoutState): Float {
 @Composable
 private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
     val p = s.phase
+    // Variant E: at the start of a cycle round the next segment of the round ring draws in,
+    // "Round 2 of 3" shows inside the timer and the round badge flashes.
+    val sweep = remember(s.index) { Animatable(if (p.roundStart) 0f else 1f) }
+    var announcing by remember(s.index) { mutableStateOf(p.roundStart) }
+    LaunchedEffect(s.index) {
+        if (p.roundStart) {
+            sweep.animateTo(1f, tween(1100, easing = FastOutSlowInEasing))
+            delay(1000)
+            announcing = false
+        }
+    }
+    val rounds = if (p.rounds > 0) RoundRingState(p.round, p.rounds, sweep.value, announcing) else null
     Column(
         Modifier
             .fillMaxSize()
             .background(C.Bg),
     ) {
-        WorkoutHeader(s, onClose, muted = C.Muted, badgeBg = C.LimeDim, badgeFg = C.Lime)
+        WorkoutHeader(s, onClose, muted = C.Muted, badgeBg = C.LimeDim, badgeFg = C.Lime, flash = announcing)
         SegmentBar(s, C.Lime)
         // The full exercise name, on as many lines as it needs; the timer below shrinks to fit.
         Row(
@@ -260,15 +293,17 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
             )
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-            val ringSize = minOf(maxWidth - 64.dp, maxHeight - 150.dp, 320.dp).coerceAtLeast(120.dp)
-            val repsRingSize = minOf(maxWidth - 64.dp, maxHeight - 240.dp, 290.dp).coerceAtLeast(110.dp)
+            // The round ring sits outside the timer, so leave room for it.
+            val roundsRoom = if (rounds != null) ROUND_RING_ROOM * 2 else 0.dp
+            val ringSize = minOf(maxWidth - 64.dp - roundsRoom, maxHeight - 150.dp - roundsRoom, 320.dp).coerceAtLeast(120.dp)
+            val repsRingSize = minOf(maxWidth - 64.dp - roundsRoom, maxHeight - 240.dp - roundsRoom, 290.dp).coerceAtLeast(110.dp)
             Column(
                 Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
             ) {
                 if (p.isReps) {
-                    RepsRing(s, repsRingSize)
+                    RepsRing(s, repsRingSize, rounds)
                     BigButton(
                         "Done",
                         onClick = { WorkoutEngine.done() },
@@ -285,6 +320,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                     }
                     return@Column
                 }
+                WithRoundRing(rounds, ringSize) {
                 TimerRing(
                     fraction = fractionLeft(s),
                     color = if (s.paused) C.Faint else C.Lime,
@@ -308,6 +344,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                         )
                     }
                 }
+                }
                 Controls(
                     paused = s.paused,
                     accent = C.Lime,
@@ -322,9 +359,10 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
 
 /** A reps set: no countdown, the target number of reps and a small stopwatch. */
 @Composable
-private fun RepsRing(s: WorkoutState, ringSize: Dp) {
+private fun RepsRing(s: WorkoutState, ringSize: Dp, rounds: RoundRingState?) {
     val size = ringSize
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        WithRoundRing(rounds, size) {
         TimerRing(fraction = 0f, color = C.Sky, track = C.SkyTrack, size = size, stroke = 16.dp) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("DO", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp, color = C.Sky)
@@ -338,6 +376,7 @@ private fun RepsRing(s: WorkoutState, ringSize: Dp) {
                 )
             }
         }
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             PathIcon(UiIcons.TIMER, C.Muted, size = 16.dp, strokeWidth = 2f)
             Spacer(Modifier.width(6.dp))
@@ -348,6 +387,70 @@ private fun RepsRing(s: WorkoutState, ringSize: Dp) {
 
 /** "0:30" for a timed set, "×12" for a reps set. */
 private fun Phase.valueLabel(): String = if (reps != null) "×$reps" else formatTime(seconds)
+
+private val ROUND_RING_ROOM = 18.dp
+
+/** Round progress of a cycle shown around the timer. [sweep] draws in the current round's segment. */
+private data class RoundRingState(val round: Int, val rounds: Int, val sweep: Float, val announcing: Boolean)
+
+@Composable
+private fun WithRoundRing(rounds: RoundRingState?, innerSize: Dp, content: @Composable () -> Unit) {
+    if (rounds == null) {
+        content()
+        return
+    }
+    val outer = innerSize + ROUND_RING_ROOM * 2
+    Box(Modifier.size(outer), contentAlignment = Alignment.Center) {
+        RoundSegments(rounds, outer)
+        content()
+        androidx.compose.animation.AnimatedVisibility(
+            visible = rounds.announcing,
+            enter = fadeIn(tween(250)) + scaleIn(tween(250), initialScale = 0.8f),
+            exit = fadeOut(tween(300)),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = ROUND_RING_ROOM - 7.dp), // sits on the bottom of the timer ring
+        ) {
+            Box(
+                Modifier
+                    .height(30.dp)
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(C.Lime)
+                    .padding(horizontal = 14.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("Round ${rounds.round} of ${rounds.rounds}", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = C.OnLime, maxLines = 1)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RoundSegments(r: RoundRingState, size: Dp) {
+    Canvas(Modifier.size(size)) {
+        val stroke = 5.dp.toPx()
+        val inset = stroke / 2f + 3.dp.toPx()
+        val arcSize = Size(this.size.width - inset * 2, this.size.height - inset * 2)
+        val topLeft = Offset(inset, inset)
+        val n = r.rounds.coerceAtLeast(1)
+        val gap = if (n == 1) 0f else (if (n > 12) 3f else 8f)
+        val span = 360f / n - gap
+        for (i in 0 until n) {
+            val start = -90f + i * (360f / n) + gap / 2f
+            val done = i < r.round - 1
+            val current = i == r.round - 1
+            drawArc(if (done) C.Lime else C.Surface3, start, span, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
+            if (current) {
+                val sweep = span * r.sweep.coerceIn(0f, 1f)
+                if (r.announcing) {
+                    // Soft glow while the segment draws in.
+                    drawArc(C.Lime.copy(alpha = 0.25f), start, sweep, false, topLeft, arcSize, style = Stroke(stroke * 3f, cap = StrokeCap.Round))
+                }
+                drawArc(C.Lime, start, sweep, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
+            }
+        }
+    }
+}
 
 @Composable
 private fun Controls(paused: Boolean, accent: Color, onAccent: Color, sideBg: Color) {
