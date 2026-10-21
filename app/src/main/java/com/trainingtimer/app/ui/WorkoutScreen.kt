@@ -240,30 +240,35 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
     ) {
         WorkoutHeader(s, onClose, muted = C.Muted, badgeBg = C.LimeDim, badgeFg = C.Lime)
         SegmentBar(s, C.Lime)
+        // The full exercise name, on as many lines as it needs; the timer below shrinks to fit.
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, top = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            ExerciseIcon(p.exercise.icon, tileSize = 52.dp, iconSize = 30.dp, tile = C.Surface, corner = 16.dp, strokeWidth = 1.6f)
+            Spacer(Modifier.width(12.dp))
+            FitText(
+                p.exercise.name,
+                maxFontSize = 34.sp,
+                minFontSize = 20.sp,
+                maxLines = 4,
+                fontFamily = Condensed,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+        }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-            val ringSize = minOf(maxWidth - 64.dp, maxHeight - 230.dp, 320.dp).coerceAtLeast(160.dp)
+            val ringSize = minOf(maxWidth - 64.dp, maxHeight - 150.dp, 320.dp).coerceAtLeast(120.dp)
+            val repsRingSize = minOf(maxWidth - 64.dp, maxHeight - 240.dp, 290.dp).coerceAtLeast(110.dp)
             Column(
                 Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
             ) {
-                Row(
-                    Modifier.padding(horizontal = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    ExerciseIcon(p.exercise.icon, tileSize = 52.dp, iconSize = 30.dp, tile = C.Surface, corner = 16.dp, strokeWidth = 1.6f)
-                    Spacer(Modifier.width(12.dp))
-                    FitText(
-                        p.exercise.name,
-                        maxFontSize = 34.sp,
-                        minFontSize = 18.sp,
-                        maxLines = 2,
-                        fontFamily = Condensed,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                }
                 if (p.isReps) {
-                    RepsRing(s, ringSize)
+                    RepsRing(s, repsRingSize)
                     BigButton(
                         "Done",
                         onClick = { WorkoutEngine.done() },
@@ -318,7 +323,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
 /** A reps set: no countdown, the target number of reps and a small stopwatch. */
 @Composable
 private fun RepsRing(s: WorkoutState, ringSize: Dp) {
-    val size = (ringSize - 70.dp).coerceAtLeast(140.dp)
+    val size = ringSize
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
         TimerRing(fraction = 0f, color = C.Sky, track = C.SkyTrack, size = size, stroke = 16.dp) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -394,7 +399,7 @@ private fun NextCard(s: WorkoutState) {
                     "NEXT"
                 }
                 Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.2.sp, color = C.Muted)
-                Text(next.exercise.name, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = C.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(next.exercise.name, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = C.Text, lineHeight = 21.sp)
             }
             Text(next.valueLabel(), fontFamily = Condensed, fontSize = 26.sp, color = if (next.reps != null) C.Sky else C.Text)
         }
@@ -512,7 +517,7 @@ private fun RestView(s: WorkoutState, onClose: () -> Unit) {
                 ExerciseIcon(p.exercise.icon, tileSize = 104.dp, iconSize = 64.dp, tile = C.RestSurface2, corner = 30.dp, strokeWidth = 1.4f)
                 Spacer(Modifier.width(18.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    FitText(p.exercise.name, maxFontSize = 36.sp, minFontSize = 18.sp, maxLines = 3, fontFamily = Condensed)
+                    FitText(p.exercise.name, maxFontSize = 36.sp, minFontSize = 18.sp, maxLines = 5, fontFamily = Condensed)
                     Text(p.valueLabel(), fontFamily = Condensed, fontSize = 30.sp, color = if (p.reps != null) C.Sky else C.Lime)
                 }
             }
@@ -560,7 +565,7 @@ private fun ThenRow(p: Phase) {
         ExerciseIcon(p.exercise.icon, tileSize = 44.dp, iconSize = 26.dp, tile = C.RestSurface2, corner = 12.dp)
         Spacer(Modifier.width(12.dp))
         val round = if (p.rounds > 0) " · round ${p.round}" else ""
-        Text("${p.exercise.name}$round", Modifier.weight(1f), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD9D2CB), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text("${p.exercise.name}$round", Modifier.weight(1f), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD9D2CB), lineHeight = 19.sp)
         Text(p.valueLabel(), fontFamily = Condensed, fontSize = 20.sp, color = C.RestMuted)
     }
 }

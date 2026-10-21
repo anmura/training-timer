@@ -81,7 +81,7 @@ No account, no ads, no internet connection. All data stays on the phone.
 
 ## Install
 
-Every push to `main` is built by GitHub Actions and published on the [Releases](../../releases) page.
+Every push to `main` is built by GitHub Actions to check it compiles. New versions are published on the [Releases](../../releases) page when a release is started by hand (Actions › Build APK › Run workflow).
 
 1. Open **Releases** on your Android phone and download the latest `TrainingTimer-*.apk`.
 2. Open the file. The first time, Android asks you to allow installing apps from your browser or file manager.

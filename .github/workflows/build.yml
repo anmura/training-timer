@@ -1,5 +1,8 @@
 name: Build APK
 
+# Every push to main is built to check it compiles.
+# A release (APK on the Releases page) is published only when the workflow is started by hand
+# (Actions › Build APK › Run workflow).
 on:
   push:
     branches: [main]
@@ -32,6 +35,7 @@ jobs:
           cp app/build/outputs/apk/release/app-release.apk TrainingTimer-1.0.${{ github.run_number }}.apk
 
       - name: Publish release
+        if: github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
