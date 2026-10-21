@@ -422,7 +422,7 @@ private fun BuilderStep(
             Column(Modifier.weight(1f)) {
                 Text(formatTime(total) + if (repsSets > 0) " +" else "", fontFamily = Condensed, fontSize = 30.sp, color = C.Text)
                 Text(
-                    if (repsSets > 0) "timed part · $repsSets reps sets at your pace" else "total · $sets exercise sets", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = C.Muted)
+                    if (repsSets > 0) "timed part · " + (if (repsSets == 1) "1 rep set" else "$repsSets rep sets") + " at your pace" else "total · $sets exercise sets", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = C.Muted)
             }
             BigButton(if (isNew) "Save complex" else "Save", onClick = { save() }, icon = UiIcons.CHECK)
         }
@@ -545,14 +545,14 @@ private fun StepRow(
     }
 }
 
-/** "3 exercises · 1:30 per round", or "… · 1:00 + 1 reps set per round". */
+/** "3 exercises · 1:30 per round", or "… · 1:00 + 1 rep set per round". */
 private fun cycleRoundLabel(steps: List<Step>): String {
     val n = steps.size
     val timed = steps.filter { !it.byReps }.sumOf { it.seconds }
     val reps = steps.count { it.byReps }
     val parts = buildList {
         if (timed > 0 || reps == 0) add(formatTime(timed))
-        if (reps > 0) add(if (reps == 1) "1 reps set" else "$reps reps sets")
+        if (reps > 0) add(if (reps == 1) "1 rep set" else "$reps rep sets")
     }
     return "${if (n == 1) "1 exercise" else "$n exercises"} · ${parts.joinToString(" + ")} per round"
 }

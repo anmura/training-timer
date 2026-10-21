@@ -28,7 +28,7 @@ No account, no ads, no internet connection. All data stays on the phone.
 - Exercise menu: **Move into new cycle**, move into an existing cycle, move out of a cycle, **Remove from complex**
 - Cycle menu: **Copy cycle** (same exercises, rounds and rest, placed right below) and Remove cycle
 - Long exercise names are shown in full; the Time / Reps switch and the value sit on their own line
-- The total workout time is calculated live (reps sets are shown separately, since they take as long as you need)
+- The total workout time is calculated live (rep sets are shown separately, since they take as long as you need)
 
 **Workout**
 - Optional "get ready" countdown before the first exercise (0–15 s, set in Settings)

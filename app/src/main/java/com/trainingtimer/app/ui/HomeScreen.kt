@@ -295,7 +295,7 @@ private fun ComplexesTab(
             }
         }
         if (data.complexes.isEmpty()) {
-            EmptyState("No complexes yet", "Tap “Create complex” to build your first training.")
+            EmptyState("No complexes yet", "Tap “Create complex” to build your first workout.")
         }
         if (data.complexes.size > 1) {
             Text(

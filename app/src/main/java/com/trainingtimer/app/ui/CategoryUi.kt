@@ -286,7 +286,7 @@ fun CategoryManagerSheet(data: AppData, onDismiss: () -> Unit) {
                 OutlinedTextField(
                     value = newName,
                     onValueChange = { newName = it },
-                    placeholder = { Text("e.g. Кардио") },
+                    placeholder = { Text("e.g. Cardio") },
                     singleLine = true,
                     isError = duplicate,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),

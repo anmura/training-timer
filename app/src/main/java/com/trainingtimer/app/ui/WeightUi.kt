@@ -155,7 +155,7 @@ private fun PerRoundWeights(
                     1 -> " · 1 edited by hand"
                     else -> " · ${edited.size} edited by hand"
                 }
-                Text("$rounds rounds$editedText", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = C.Muted)
+                Text((if (rounds == 1) "1 round" else "$rounds rounds") + editedText, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = C.Muted)
             }
             Spacer(Modifier.width(8.dp))
             Text(if (expanded) "Done" else "Edit", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = C.Violet)

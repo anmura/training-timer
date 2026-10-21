@@ -201,17 +201,17 @@ fun Complex.setCount(): Int = flatten().size
 /** Known workout length in seconds: timed exercises plus all rests. Reps sets add their own, unknown time. */
 fun Complex.totalSeconds(): Int = flatten().sumOf { it.seconds + it.restAfter }
 
-/** Number of reps sets in the whole workout, cycles expanded. */
+/** Number of rep sets in the whole workout, cycles expanded. */
 fun Complex.repsSetCount(): Int = flatten().count { it.reps != null }
 
-/** "12:30", or "12:30 + 3 reps sets" when some sets are counted in reps. */
+/** "12:30", or "12:30 + 3 rep sets" when some sets are counted in reps. */
 fun Complex.durationLabel(): String {
     val reps = repsSetCount()
     val time = formatTime(totalSeconds())
     return when (reps) {
         0 -> time
-        1 -> "$time + 1 reps set"
-        else -> "$time + $reps reps sets"
+        1 -> "$time + 1 rep set"
+        else -> "$time + $reps rep sets"
     }
 }
 
@@ -225,7 +225,7 @@ fun Complex.describe(): String {
     if (cycles.size == 1) parts += "1 cycle ×${cycles[0].repeats}"
     else if (cycles.size > 1) parts += "${cycles.size} cycles"
     val reps = repsSetCount()
-    if (reps > 0) parts += if (reps == 1) "1 reps set" else "$reps reps sets"
+    if (reps > 0) parts += if (reps == 1) "1 rep set" else "$reps rep sets"
     parts += if (restSeconds > 0) "rest $restSeconds s" else "no rest"
     return parts.joinToString(" · ")
 }
