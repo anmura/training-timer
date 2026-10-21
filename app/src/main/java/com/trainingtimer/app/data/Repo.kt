@@ -45,6 +45,7 @@ object Repo {
         installCategories()
         installAssetProgram("program_stretch2_v1", "program_stretch2.json")
         installAssetProgram("program_basics_v1", "program_basics.json")
+        installAssetProgram("program_pullups_v1", "program_pullups.json")
     }
 
     /**

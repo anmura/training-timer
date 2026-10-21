@@ -453,6 +453,92 @@
       "categories": [
         "Силовые"
       ]
+    },
+    {
+      "name": "Подтягивания широким хватом",
+      "icon": "pullupwide",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Подтягивания узким хватом",
+      "icon": "pullupclose",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Подтягивания обратным хватом",
+      "icon": "chinup",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Подтягивания нейтральным хватом",
+      "icon": "pullupneutral",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Австралийские подтягивания",
+      "icon": "invertedrow",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Негативные подтягивания",
+      "icon": "pullupneg",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Подтягивания с резинкой",
+      "icon": "pullupband",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Вис на перекладине",
+      "icon": "deadhang",
+      "categories": [
+        "Силовые",
+        "Мобильность"
+      ]
+    },
+    {
+      "name": "Лопаточные подтягивания",
+      "icon": "scappull",
+      "categories": [
+        "Силовые",
+        "Мобильность"
+      ]
+    },
+    {
+      "name": "Подтягивания с уголком",
+      "icon": "lsitpull",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Подтягивания лучника",
+      "icon": "archerpull",
+      "categories": [
+        "Силовые"
+      ]
+    },
+    {
+      "name": "Подтягивания с отягощением",
+      "icon": "pullupweight",
+      "categories": [
+        "Силовые"
+      ]
     }
   ],
   "complexes": [
