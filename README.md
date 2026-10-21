@@ -1,10 +1,10 @@
 # Training Timer
 
-An offline workout timer for Android: build workouts from your own exercises, time them or count reps, repeat them in cycles, and get reminded when it's time to train.
+An offline workout timer for Android: build workouts from your own exercises, time them or count reps, add weights, repeat them in cycles, and get reminded when it's time to train.
 
 ![Training Timer screens](docs/screenshots/banner.png)
 
-Build a workout ("complex") from your own exercise library. Give each exercise a time or a number of reps, group exercises into cycles that repeat several rounds, and choose how long to rest between them. Press **Start** and the app guides you through the whole session: a big countdown for timed sets, a **Done** button for reps sets, the next exercise shown during every rest, beeps and vibration at each switch, and controls on the lock screen. Set reminders as a notification or a full-screen alarm so you don't skip a day.
+Build a workout ("complex") from your own exercise library. Give each exercise a time or a number of reps (and a weight if it uses one), group exercises into cycles that repeat several rounds, and choose how long to rest between them. Press **Start** and the app guides you through the whole session: a big countdown for timed sets, a **Done** button for reps sets, the next exercise shown during every rest, beeps and vibration at each switch, and controls on the lock screen. Set reminders as a notification or a full-screen alarm so you don't skip a day.
 
 No account, no ads, no internet connection. All data stays on the phone.
 
@@ -17,20 +17,26 @@ No account, no ads, no internet connection. All data stays on the phone.
 - Categories with colours; an exercise can belong to several categories or to none
 - Filter chips and a grouped list by category, plus search
 - Ready-made exercises for mobility, strength, stretching and wrists, plus 12 pull-up variations
+- An exercise can be marked **Uses weight** (dumbbells, kettlebell, barbell)
 
 **Complex builder**
 - Pick exercises with checkboxes, then set the time of each one (−/+ in 5-second steps, or tap the time to type it)
 - Switch any exercise between **Time** and **Reps**: a reps set has a target count (for example ×12) instead of a timer
 - Cycles: a group of exercises repeated N rounds, with its own optional rest between exercises
 - One rest time for the whole complex; no rest is added after the last exercise
-- Hold and drag to reorder exercises, cycles and complexes; move exercises into and out of cycles
+- Hold and drag to reorder exercises, cycles and complexes
+- Exercise menu: **Move into new cycle**, move into an existing cycle, move out of a cycle, **Remove from complex**
+- Cycle menu: **Copy cycle** (same exercises, rounds and rest, placed right below) and Remove cycle
+- Long exercise names are shown in full; the Time / Reps switch and the value sit on their own line
 - The total workout time is calculated live (reps sets are shown separately, since they take as long as you need)
 
 **Workout**
 - Optional "get ready" countdown before the first exercise (0–15 s, set in Settings)
-- Large timer ring, current round (for example *Round 2/3*), progress for every set and time left
+- Large timer ring with the full exercise name, progress for every set and time left (one continuous bar for more than 40 sets)
+- In a cycle: a **round ring** around the timer with one segment per round and a *2/3* badge in the header
+- **New round** animation: the next segment draws in with a glow, *Round 2 of 3* appears on the timer, the badge flashes, and a distinct triple beep and buzz play
 - Reps sets show the target count and a small stopwatch; tap the big **Done** button when you finish and the next rest starts
-- Rest screen with the next exercise shown large and the two after it
+- Rest screen with the next exercise shown large and the two after it (with reps and weight)
 - Pause, skip, previous and +10 s
 - Beeps in the last 3 seconds and at every switch, vibration on each switch (both can be turned off)
 - Keeps running with the screen locked; pause, skip, Done (for reps sets) and end from the notification
@@ -40,7 +46,9 @@ No account, no ads, no internet connection. All data stays on the phone.
 - Mark an exercise as **Uses weight** in its settings; choose kg or lb in Settings
 - Set the weight in the complex: one weight, or in a cycle a weight **per round**
 - Per round: **Fill** from a start weight and a step (e.g. 10 kg, +2), then change any round by hand; edited rounds are marked
-- During the workout the planned weight is shown with the set and in the Next card
+- A cycle can mix weighted and bodyweight exercises; each weighted exercise has its own Same / Per round setting, and per-round weights fold into one line until you tap Edit
+- Tap any weight to type it (decimals allowed); − / + change it by 1 kg or 2.5 lb
+- During the workout the planned weight is shown with the set, in the Next card, on the rest screen and in the notification; it is not changed there
 
 **Reminders**
 - Settings › Reminders: any number of reminders, each with a time and repeat days (every day, weekdays, chosen days, or once)
@@ -65,25 +73,33 @@ No account, no ads, no internet connection. All data stays on the phone.
 |---|---|---|
 | <img src="docs/screenshots/04-pick-exercises.png" width="240"> | <img src="docs/screenshots/05-complex-builder.png" width="240"> | <img src="docs/screenshots/06-add-cycle.png" width="240"> |
 
-| Time or reps | Workout: timed set | Workout: reps set |
+| Exercise menu | Workout: timed set | Workout: reps set |
 |---|---|---|
 | <img src="docs/screenshots/14-time-or-reps.png" width="240"> | <img src="docs/screenshots/07-workout.png" width="240"> | <img src="docs/screenshots/15-reps-set.png" width="240"> |
 
-| Rest and next exercise | Import / export | Import result |
+| Many rounds | Rest and next exercise | Import / export |
 |---|---|---|
-| <img src="docs/screenshots/08-rest.png" width="240"> | <img src="docs/screenshots/09-import-export.png" width="240"> | <img src="docs/screenshots/10-import-result.png" width="240"> |
+| <img src="docs/screenshots/25-many-rounds.png" width="240"> | <img src="docs/screenshots/08-rest.png" width="240"> | <img src="docs/screenshots/09-import-export.png" width="240"> |
+
+| Uses weight | Weight per round | Mixed cycle |
+|---|---|---|
+| <img src="docs/screenshots/21-weight-exercise.png" width="240"> | <img src="docs/screenshots/22-weight-per-round.png" width="240"> | <img src="docs/screenshots/23-weight-mixed-cycle.png" width="240"> |
+
+| Weight in the workout | Settings | Import result |
+|---|---|---|
+| <img src="docs/screenshots/24-weight-workout.png" width="240"> | <img src="docs/screenshots/16-settings.png" width="240"> | <img src="docs/screenshots/10-import-result.png" width="240"> |
 
 | Categories | Exercise categories | Manage categories |
 |---|---|---|
 | <img src="docs/screenshots/11-categories.png" width="240"> | <img src="docs/screenshots/12-exercise-categories.png" width="240"> | <img src="docs/screenshots/13-manage-categories.png" width="240"> |
 
-| Settings | Reminders | New reminder |
+| Reminders | New reminder | Notification |
 |---|---|---|
-| <img src="docs/screenshots/16-settings.png" width="240"> | <img src="docs/screenshots/17-reminders.png" width="240"> | <img src="docs/screenshots/18-new-reminder.png" width="240"> |
+| <img src="docs/screenshots/17-reminders.png" width="240"> | <img src="docs/screenshots/18-new-reminder.png" width="240"> | <img src="docs/screenshots/19-reminder-notification.png" width="240"> |
 
-| Notification | Alarm |
-|---|---|
-| <img src="docs/screenshots/19-reminder-notification.png" width="240"> | <img src="docs/screenshots/20-alarm.png" width="240"> |
+| Alarm |
+|---|
+| <img src="docs/screenshots/20-alarm.png" width="240"> |
 
 ## Install
 
@@ -136,7 +152,8 @@ The built-in programs live in [`app/src/main/assets`](app/src/main/assets) and u
   ],
   "exercises": [
     { "name": "Burpees", "icon": "jump", "categories": ["Силовые"] },
-    { "name": "Side plank", "icon": "plank" }
+    { "name": "Side plank", "icon": "plank" },
+    { "name": "Goblet squat", "icon": "squat", "usesWeight": true }
   ],
   "complexes": [
     {
@@ -145,8 +162,10 @@ The built-in programs live in [`app/src/main/assets`](app/src/main/assets) and u
       "items": [
         { "exercise": "Burpees", "time": 30 },
         { "exercise": "Push-ups", "reps": 12 },
+        { "exercise": "Goblet squat", "reps": 12, "weight": 16 },
         { "cycle": { "repeats": 3, "rest": 10, "items": [
-          { "exercise": "Side plank", "time": 45 }
+          { "exercise": "Side plank", "time": 45 },
+          { "exercise": "Goblet squat", "reps": 10, "weights": [12, 14, 16] }
         ] } }
       ]
     }
@@ -172,7 +191,7 @@ Kotlin and Jetpack Compose, no third-party libraries beyond AndroidX.
 ```
 app/src/main/java/com/trainingtimer/app/
 ├── data/       models, JSON storage (Repo), import/export, icon definitions
-├── ui/         screens: home, exercise and complex editors, workout, settings, categories, reminders
+├── ui/         screens: home, exercise and complex editors (incl. weights), workout, settings, categories, reminders
 ├── workout/    workout engine (timing, beeps, vibration) and the foreground service
 └── reminders/  scheduling (AlarmManager), notification, alarm service and full-screen alarm screen
 app/src/main/assets/    built-in exercises and complexes
