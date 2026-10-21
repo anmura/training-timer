@@ -163,57 +163,75 @@ private fun PerRoundWeights(
         }
         if (!expanded) return@Column
 
-        // Fill: start + step, Apply sets every round (and drops hand edits).
-        Row(
+        // Fill: start + step per round; the button shows exactly what it will set (and drops hand edits).
+        val preview = (0 until rounds).map { step.plannedWeight(it) }
+        Column(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(C.VioletBg)
-                .padding(start = 10.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("Fill", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color8)
-            Spacer(Modifier.width(4.dp))
-            Stepper(
-                text = number(step.fillStart),
-                onMinus = { onStep(step.copy(fillStart = (step.fillStart - unitStep(unit)).coerceAtLeast(0.0))) },
-                onPlus = { onStep(step.copy(fillStart = (step.fillStart + unitStep(unit)).coerceAtMost(MAX_WEIGHT))) },
-                textColor = C.Violet,
-                buttonWidth = 26.dp,
-                minTextWidth = 32.dp,
-                fontSize = 18.sp,
-                background = C.VioletDim,
-                minusLabel = "Lower start weight",
-                plusLabel = "Higher start weight",
-            )
-            Spacer(Modifier.width(4.dp))
-            Text("step", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color8)
-            Spacer(Modifier.width(4.dp))
-            Stepper(
-                text = (if (step.fillStep > 0) "+" else if (step.fillStep < 0) "−" else "") + number(kotlin.math.abs(step.fillStep)),
-                onMinus = { onStep(step.copy(fillStep = (step.fillStep - unitStep(unit)).coerceAtLeast(-50.0))) },
-                onPlus = { onStep(step.copy(fillStep = (step.fillStep + unitStep(unit)).coerceAtMost(50.0))) },
-                textColor = C.Violet,
-                buttonWidth = 26.dp,
-                minTextWidth = 28.dp,
-                fontSize = 18.sp,
-                background = C.VioletDim,
-                minusLabel = "Smaller step",
-                plusLabel = "Bigger step",
-            )
-            Spacer(Modifier.weight(1f))
+            Column {
+                Text("Fill all rounds", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
+                Text(
+                    "Round 1 gets the start weight, each next round adds the step.",
+                    fontSize = 12.sp,
+                    color = Color8,
+                    lineHeight = 16.sp,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Start", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = C.Muted)
+                    Stepper(
+                        text = formatWeight(step.fillStart, unit),
+                        onMinus = { onStep(step.copy(fillStart = (step.fillStart - unitStep(unit)).coerceAtLeast(0.0))) },
+                        onPlus = { onStep(step.copy(fillStart = (step.fillStart + unitStep(unit)).coerceAtMost(MAX_WEIGHT))) },
+                        textColor = C.Violet,
+                        buttonWidth = 32.dp,
+                        minTextWidth = 56.dp,
+                        fontSize = 20.sp,
+                        background = C.VioletDim,
+                        minusLabel = "Lower start weight",
+                        plusLabel = "Higher start weight",
+                    )
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Step per round", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = C.Muted)
+                    Stepper(
+                        text = (if (step.fillStep > 0) "+" else if (step.fillStep < 0) "−" else "") +
+                            formatWeight(kotlin.math.abs(step.fillStep), unit),
+                        onMinus = { onStep(step.copy(fillStep = (step.fillStep - unitStep(unit)).coerceAtLeast(-50.0))) },
+                        onPlus = { onStep(step.copy(fillStep = (step.fillStep + unitStep(unit)).coerceAtMost(50.0))) },
+                        textColor = C.Violet,
+                        buttonWidth = 32.dp,
+                        minTextWidth = 56.dp,
+                        fontSize = 20.sp,
+                        background = C.VioletDim,
+                        minusLabel = "Smaller step",
+                        plusLabel = "Bigger step",
+                    )
+                }
+            }
             Box(
                 Modifier
-                    .height(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .fillMaxWidth()
+                    .heightIn(min = 44.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(C.Violet)
-                    .clickable(role = Role.Button) {
-                        onStep(step.copy(roundWeights = (0 until rounds).map { step.plannedWeight(it) }))
-                    }
-                    .padding(horizontal = 10.dp),
+                    .clickable(role = Role.Button) { onStep(step.copy(roundWeights = preview)) }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Apply", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = C.OnLime)
+                Text(
+                    "Fill rounds: " + preview.joinToString(" · ") { number(it) } + " $unit",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = C.OnLime,
+                    lineHeight = 18.sp,
+                )
             }
         }
 
@@ -267,7 +285,7 @@ private fun PerRoundWeights(
             Column(Modifier.weight(1f)) {
                 Text("Round ${sel + 1}", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
                 Text(
-                    if (sel in edited) "Edited · Fill: ${number(step.plannedWeight(sel))}" else "From Fill",
+                    if (sel in edited) "Changed by hand" else "From fill",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = C.Muted,
