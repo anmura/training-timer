@@ -1,10 +1,10 @@
 # Training Timer
 
-An offline interval timer for Android that turns your own exercises, cycles and rests into a hands-free guided workout.
+An offline workout timer for Android: build workouts from your own exercises, time them or count reps, repeat them in cycles, and get reminded when it's time to train.
 
 ![Training Timer screens](docs/screenshots/banner.png)
 
-Build a workout ("complex") from your own exercise library, set a time for every exercise, group exercises into cycles that repeat several rounds, and choose how long to rest between them. Press **Start** and the app guides you through the whole session: a big countdown, the next exercise shown during every rest, beeps and vibration at each switch, and controls on the lock screen.
+Build a workout ("complex") from your own exercise library. Give each exercise a time or a number of reps, group exercises into cycles that repeat several rounds, and choose how long to rest between them. Press **Start** and the app guides you through the whole session: a big countdown for timed sets, a **Done** button for reps sets, the next exercise shown during every rest, beeps and vibration at each switch, and controls on the lock screen. Set reminders as a notification or a full-screen alarm so you don't skip a day.
 
 No account, no ads, no internet connection. All data stays on the phone.
 
@@ -13,10 +13,10 @@ No account, no ads, no internet connection. All data stays on the phone.
 ## Features
 
 **Exercise library**
-- Exercises with a name and an icon: 60+ built-in line icons in one style
+- Exercises with a name and an icon: 75+ built-in line icons in one style
 - Categories with colours; an exercise can belong to several categories or to none
 - Filter chips and a grouped list by category, plus search
-- Ready-made exercises for mobility, strength, stretching and wrists
+- Ready-made exercises for mobility, strength, stretching and wrists, plus 12 pull-up variations
 
 **Complex builder**
 - Pick exercises with checkboxes, then set the time of each one (−/+ in 5-second steps, or tap the time to type it)
@@ -37,10 +37,12 @@ No account, no ads, no internet connection. All data stays on the phone.
 - The screen stays on during a workout
 
 **Reminders**
-- Settings › Reminders: set a time and repeat days (or once)
-- Remind about a specific workout (start it right from the reminder) or just "time to train"
-- Choose a notification (Start / Snooze) or an alarm that rings full screen, even on silent, with Start, Snooze and Dismiss
-- Alarms survive reboots and app updates; complex cards show their reminder
+- Settings › Reminders: any number of reminders, each with a time and repeat days (every day, weekdays, chosen days, or once)
+- Remind about a specific workout (start it right from the reminder) or just "time to train" with your own message
+- **Notification:** a banner with Start (or Choose workout) and Snooze
+- **Alarm:** rings full screen over the lock screen, even in silent mode, with your chosen sound; Start workout, Snooze (5–30 min) or Dismiss. If nobody reacts in 5 minutes it snoozes itself
+- One-time reminders switch themselves off after they ring; everything is set again after a reboot, an app update or a clock change
+- Complex cards on the home screen show their reminder, for example *Mon, Wed, Fri · 07:30*
 
 **Import and export**
 - Import exercises and complexes from a JSON file; existing names are skipped and a summary lists what was added, skipped or not readable
@@ -57,17 +59,25 @@ No account, no ads, no internet connection. All data stays on the phone.
 |---|---|---|
 | <img src="docs/screenshots/04-pick-exercises.png" width="240"> | <img src="docs/screenshots/05-complex-builder.png" width="240"> | <img src="docs/screenshots/06-add-cycle.png" width="240"> |
 
-| Workout | Rest and next exercise | Import / export |
+| Time or reps | Workout: timed set | Workout: reps set |
 |---|---|---|
-| <img src="docs/screenshots/07-workout.png" width="240"> | <img src="docs/screenshots/08-rest.png" width="240"> | <img src="docs/screenshots/09-import-export.png" width="240"> |
+| <img src="docs/screenshots/14-time-or-reps.png" width="240"> | <img src="docs/screenshots/07-workout.png" width="240"> | <img src="docs/screenshots/15-reps-set.png" width="240"> |
 
-| Import result | Categories | Exercise categories |
+| Rest and next exercise | Import / export | Import result |
 |---|---|---|
-| <img src="docs/screenshots/10-import-result.png" width="240"> | <img src="docs/screenshots/11-categories.png" width="240"> | <img src="docs/screenshots/12-exercise-categories.png" width="240"> |
+| <img src="docs/screenshots/08-rest.png" width="240"> | <img src="docs/screenshots/09-import-export.png" width="240"> | <img src="docs/screenshots/10-import-result.png" width="240"> |
 
-| Manage categories |
-|---|
-| <img src="docs/screenshots/13-manage-categories.png" width="240"> |
+| Categories | Exercise categories | Manage categories |
+|---|---|---|
+| <img src="docs/screenshots/11-categories.png" width="240"> | <img src="docs/screenshots/12-exercise-categories.png" width="240"> | <img src="docs/screenshots/13-manage-categories.png" width="240"> |
+
+| Settings | Reminders | New reminder |
+|---|---|---|
+| <img src="docs/screenshots/16-settings.png" width="240"> | <img src="docs/screenshots/17-reminders.png" width="240"> | <img src="docs/screenshots/18-new-reminder.png" width="240"> |
+
+| Notification | Alarm |
+|---|---|
+| <img src="docs/screenshots/19-reminder-notification.png" width="240"> | <img src="docs/screenshots/20-alarm.png" width="240"> |
 
 ## Install
 
@@ -79,12 +89,25 @@ Every push to `main` is built by GitHub Actions and published on the [Releases](
 
 Requires Android 8.0 or newer.
 
+### Permissions
+
+| Permission | Why |
+|---|---|
+| Notifications | Workout controls on the lock screen and reminders. Asked when you start a workout or save a reminder |
+| Exact alarms | Reminders fire on the minute. Granted automatically (Android 13+: `USE_EXACT_ALARM`) |
+| Full-screen alarms | An alarm opens over the lock screen. On Android 14+ you may need to allow it; the Reminders screen shows an **Allow** button if so |
+| Run at startup | Sets reminders again after the phone restarts |
+| Foreground service, wake lock, vibration | Keep the timer and an alarm running with the screen off |
+
+The app has no internet permission.
+
 ## Built-in content
 
 On first launch the app adds:
 
 - **Categories:** Мобильность (mobility), Силовые (strength), Растяжка (stretching)
 - **Exercises:** joint warm-up, shoulder mobility, bodyweight strength, stretching and wrist exercises, each with its own icon
+- **Pull-ups:** wide, close, chin-up, neutral grip, inverted (Australian), negative, band-assisted, dead hang, scapular, L-sit, archer and weighted
 - **Complexes:** five base workouts that show every feature — single exercises, several cycles, repeats and per-cycle rest:
 
 | Complex | Sets | Duration | Highlights |
@@ -131,6 +154,7 @@ The built-in programs live in [`app/src/main/assets`](app/src/main/assets) and u
 - Categories are matched by name and created if they don't exist.
 - An unknown or missing `icon` becomes the "?" icon.
 - Exercises and complexes whose names already exist are skipped.
+- Reminders are not part of export files: they belong to the phone they were set on.
 
 Icon names: `plank pushup squat jump jacks run lunge stretch dumbbell kettlebell rope abs bike timer heart wallslide facepull dislocate handslock chestwall chestwallhigh thoracic pullup dips pistol legraise wristcurl wristext bartilt sidetwist kneeschest hamstring pigeon butterfly forearm neck shoulderroll armcircles elbowcircles wristcircles hipcircles kneecircles catcow glutebridge pike abwheel sidelunge forwardfold scapula cobra legswing legreach sidebend calf quad lyingquad neckside neckforward scm bartiltfwd bartiltback barrotate fingerroll pullupwide pullupclose chinup pullupneutral invertedrow pullupneg pullupband deadhang scappull lsitpull archerpull pullupweight unknown`
 
@@ -141,8 +165,9 @@ Kotlin and Jetpack Compose, no third-party libraries beyond AndroidX.
 ```
 app/src/main/java/com/trainingtimer/app/
 ├── data/       models, JSON storage (Repo), import/export, icon definitions
-├── ui/         screens: home, exercise and complex editors, workout, settings, categories
-└── workout/    workout engine (timing, beeps, vibration) and the foreground service
+├── ui/         screens: home, exercise and complex editors, workout, settings, categories, reminders
+├── workout/    workout engine (timing, beeps, vibration) and the foreground service
+└── reminders/  scheduling (AlarmManager), notification, alarm service and full-screen alarm screen
 app/src/main/assets/    built-in exercises and complexes
 docs/screenshots/       images used in this README
 ```
