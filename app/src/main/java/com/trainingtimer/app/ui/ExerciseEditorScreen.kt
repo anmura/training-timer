@@ -57,7 +57,6 @@ import com.trainingtimer.app.data.Repo
 import com.trainingtimer.app.data.UiIcons
 import com.trainingtimer.app.data.newId
 
-@OptIn(ExperimentalLayoutApi::class)
 /** On for dumbbells, kettlebells etc.: complexes then get a weight field for this exercise. */
 @Composable
 private fun UsesWeightRow(on: Boolean, onChange: (Boolean) -> Unit) {
@@ -120,6 +119,7 @@ private fun UsesWeightRow(on: Boolean, onChange: (Boolean) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClose: () -> Unit) {
     val context = LocalContext.current
