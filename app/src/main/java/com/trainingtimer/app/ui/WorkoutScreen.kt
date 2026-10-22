@@ -47,6 +47,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -229,7 +230,7 @@ private fun SegmentBar(s: WorkoutState, color: Color) {
                 val path = androidx.compose.ui.graphics.Path().apply {
                     addRoundRect(androidx.compose.ui.geometry.RoundRect(left, top, left + w, top + uh, r))
                 }
-                androidx.compose.ui.graphics.drawscope.clipPath(path) {
+                clipPath(path) {
                     drawRect(C.Surface3, Offset(left, top), Size(w, uh))
                     val dw = w * done / n
                     drawRect(color, Offset(left, top), Size(dw, uh))
