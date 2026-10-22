@@ -172,18 +172,24 @@ data class FlatSet(
     val round: Int,
     val rounds: Int,
     val restAfter: Int,
+    /** 1-based number of the cycle this set belongs to in the complex; 0 for a single exercise. */
+    val cycle: Int = 0,
 )
 
-private data class RawSet(val step: Step, val round: Int, val rounds: Int, val cycleKey: String?, val cycleRest: Int?)
+private data class RawSet(val step: Step, val round: Int, val rounds: Int, val cycleKey: String?, val cycleRest: Int?, val cycle: Int = 0)
 
 /** The workout in order, cycles expanded. Rest between two sets of the same cycle uses the cycle's own rest if set. */
 fun Complex.flatten(): List<FlatSet> {
     val raw = ArrayList<RawSet>()
+    var cycleNo = 0
     for (item in items) {
         when (item) {
             is ComplexItem.Single -> raw += RawSet(item.step, 0, 0, null, null)
-            is ComplexItem.Cycle -> for (r in 1..item.repeats) {
-                for (s in item.steps) raw += RawSet(s, r, item.repeats, item.key, item.rest)
+            is ComplexItem.Cycle -> {
+                cycleNo++
+                for (r in 1..item.repeats) {
+                    for (s in item.steps) raw += RawSet(s, r, item.repeats, item.key, item.rest, cycleNo)
+                }
             }
         }
     }
@@ -194,7 +200,7 @@ fun Complex.flatten(): List<FlatSet> {
             else -> restSeconds
         }
         val st = r.step
-        FlatSet(st.exerciseId, if (st.byReps) 0 else st.seconds, if (st.byReps) st.reps else null, st.weightFor(r.round), r.round, r.rounds, rest)
+        FlatSet(st.exerciseId, if (st.byReps) 0 else st.seconds, if (st.byReps) st.reps else null, st.weightFor(r.round), r.round, r.rounds, rest, r.cycle)
     }
 }
 

@@ -173,48 +173,146 @@ private fun WorkoutHeader(
 
 @Composable
 private fun SegmentBar(s: WorkoutState, color: Color) {
-    val current = s.phase.workNumber
-    val doneCount = if (s.phase.type == PhaseType.WORK) current - 1 else current - 1
-    if (s.totalWork <= 40) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
-        ) {
-            for (i in 1..s.totalWork) {
-                val c = when {
-                    i <= doneCount -> color
-                    i == current && s.phase.isReps -> C.Sky
-                    i == current && s.phase.type == PhaseType.WORK -> C.Text
-                    else -> C.Surface3
-                }
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(c),
+    val works = remember(s.phases) { s.phases.filter { it.type == PhaseType.WORK } }
+    if (works.isEmpty()) return
+    // 0-based index of the current (or, during rest, the upcoming) set; every set before it is done.
+    val cur = (s.phase.workNumber - 1).coerceIn(0, works.lastIndex)
+    val working = s.phase.type == PhaseType.WORK
+    val curColor = if (s.phase.isReps) C.Sky else C.Text
+    Canvas(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 4.dp)
+            .height(14.dp),
+    ) {
+        val px = density
+        val (units, widths) = progressUnits(works, cur, size.width / px)
+        var x = 0f
+        val xs = FloatArray(units.size)
+        for (k in units.indices) {
+            xs[k] = x
+            x += widths[k] + if (k < units.lastIndex) unitGap(units[k], units[k + 1]) else 0f
+        }
+        val h = size.height
+        // Cycles sit on a soft band; the band of the cycle you are in is highlighted.
+        var k = 0
+        while (k < units.size) {
+            var e = k
+            while (e + 1 < units.size && units[e + 1].block == units[k].block) e++
+            if (units[k].cycle > 0) {
+                val active = cur >= units[k].from && cur < units[e].to
+                val left = (xs[k] - 4f) * px
+                val right = (xs[e] + widths[e] + 4f) * px
+                val r = androidx.compose.ui.geometry.CornerRadius(h / 2f)
+                drawRoundRect(if (active) BandActive else BandIdle, Offset(left, 0f), Size(right - left, h), r)
+                drawRoundRect(
+                    if (active) BandActiveBorder else BandIdleBorder, Offset(left + 0.5f * px, 0.5f * px),
+                    Size(right - left - px, h - px), r, style = Stroke(px),
                 )
             }
+            k = e + 1
         }
-    } else {
-        Box(
-            Modifier
-                .padding(horizontal = 16.dp, vertical = 4.dp)
-                .fillMaxWidth()
-                .height(4.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(C.Surface3),
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(doneCount.toFloat() / s.totalWork)
-                    .height(4.dp)
-                    .background(color),
-            )
+        for (j in units.indices) {
+            val u = units[j]
+            val uh = (if (u.cycle > 0) 6f else 4f) * px
+            val top = (h - uh) / 2f
+            val left = xs[j] * px
+            val w = widths[j] * px
+            val r = androidx.compose.ui.geometry.CornerRadius(uh / 2f)
+            val n = u.to - u.from
+            val done = (u.from until u.to).count { it < cur }
+            val isCur = working && cur >= u.from && cur < u.to
+            if (n == 1) {
+                drawRoundRect(if (done == 1) color else if (isCur) curColor else C.Surface3, Offset(left, top), Size(w, uh), r)
+            } else {
+                // A whole round or block as one segment that fills up.
+                val path = androidx.compose.ui.graphics.Path().apply {
+                    addRoundRect(androidx.compose.ui.geometry.RoundRect(left, top, left + w, top + uh, r))
+                }
+                androidx.compose.ui.graphics.drawscope.clipPath(path) {
+                    drawRect(C.Surface3, Offset(left, top), Size(w, uh))
+                    val dw = w * done / n
+                    drawRect(color, Offset(left, top), Size(dw, uh))
+                    if (isCur) drawRect(curColor, Offset(left + dw, top), Size(maxOf(w / n, 3f * px), uh))
+                }
+            }
         }
     }
+}
+
+private val BandActive = Color(0xFF1E2412)
+private val BandActiveBorder = Color(0xFF6E8A22)
+private val BandIdle = Color(0xFF181B1F)
+private val BandIdleBorder = Color(0xFF2A2F34)
+
+/** A piece of the progress line: one set, one round of a cycle, or a whole block. [to] is exclusive. */
+private class BarUnit(val block: Int, val cycle: Int, val from: Int, val to: Int, val round: Int, val perSet: Boolean)
+
+private fun unitGap(a: BarUnit, b: BarUnit): Float = when {
+    a.block != b.block -> 10f
+    a.cycle == 0 -> 4f
+    a.perSet && b.perSet -> if (a.round != b.round) 6f else 2f
+    else -> 3f
+}
+
+/**
+ * Lays out the progress line ("magnifier"): if every set fits, each set is its own segment.
+ * Otherwise the block you are in keeps per-set detail and gets at least 55% of the width,
+ * while other cycles shrink to one segment per round (or one per cycle when even that is too thin).
+ * Widths are in dp.
+ */
+private fun progressUnits(works: List<com.trainingtimer.app.workout.Phase>, cur: Int, width: Float): Pair<List<BarUnit>, FloatArray> {
+    val n = works.size
+    val blocks = ArrayList<IntRange>()
+    var i = 0
+    while (i < n) {
+        var j = i
+        while (j + 1 < n && works[j + 1].cycle == works[i].cycle) j++
+        blocks += i..j
+        i = j + 1
+    }
+    fun sets(b: Int) = blocks[b].map { BarUnit(b, works[it].cycle, it, it + 1, works[it].round, true) }
+    fun rounds(b: Int): List<BarUnit> {
+        val r = blocks[b]
+        if (works[r.first].cycle == 0) return listOf(BarUnit(b, 0, r.first, r.last + 1, 0, false))
+        val out = ArrayList<BarUnit>()
+        var a = r.first
+        while (a <= r.last) {
+            var e = a
+            while (e + 1 <= r.last && works[e + 1].round == works[a].round) e++
+            out += BarUnit(b, works[a].cycle, a, e + 1, works[a].round, false)
+            a = e + 1
+        }
+        return out
+    }
+    fun whole(b: Int) = listOf(BarUnit(b, works[blocks[b].first].cycle, blocks[b].first, blocks[b].last + 1, 0, false))
+    fun gaps(us: List<BarUnit>) = (0 until us.size - 1).sumOf { unitGap(us[it], us[it + 1]).toDouble() }.toFloat()
+
+    // Everything fits: plain per-set line.
+    val all = blocks.indices.flatMap { sets(it) }
+    val each = (width - gaps(all)) / n
+    if (each >= 5f) return all to FloatArray(n) { each }
+
+    val cb = blocks.indexOfFirst { cur in it }.coerceAtLeast(0)
+    val curSize = blocks[cb].count()
+    val share = if (blocks.size == 1) 1f else maxOf(0.55f, curSize.toFloat() / n)
+    val curUnits = if (width * share / curSize - 2f >= 4f || works[blocks[cb].first].cycle == 0) sets(cb) else rounds(cb)
+
+    fun build(collapse: Boolean): Pair<List<BarUnit>, FloatArray> {
+        val us = ArrayList<BarUnit>()
+        for (b in blocks.indices) us += if (b == cb) curUnits else if (collapse) whole(b) else rounds(b)
+        val avail = width - gaps(us)
+        val other = n - curSize
+        val w = FloatArray(us.size) { k ->
+            val u = us[k]
+            val sz = (u.to - u.from).toFloat()
+            if (u.block == cb) avail * share * sz / curSize else avail * (1f - share) * sz / other.coerceAtLeast(1)
+        }
+        return us to w
+    }
+    val first = build(false)
+    val tooThin = first.first.indices.any { first.first[it].block != cb && first.second[it] < 2.5f }
+    return if (tooThin) build(true) else first
 }
 
 @Composable
@@ -491,9 +589,9 @@ private fun RoundSegments(r: RoundRingState, size: Dp) {
                 val sweep = span * r.sweep.coerceIn(0f, 1f)
                 if (r.announcing) {
                     // Soft glow while the segment draws in.
-                    drawArc(C.Lime.copy(alpha = 0.25f), start, sweep, false, topLeft, arcSize, style = Stroke(stroke * 3f, cap = cap))
+                    drawArc(C.Text.copy(alpha = 0.25f), start, sweep, false, topLeft, arcSize, style = Stroke(stroke * 3f, cap = cap))
                 }
-                drawArc(C.Lime, start, sweep, false, topLeft, arcSize, style = Stroke(stroke, cap = cap))
+                drawArc(C.Text, start, sweep, false, topLeft, arcSize, style = Stroke(stroke, cap = cap))
             }
         }
     }
