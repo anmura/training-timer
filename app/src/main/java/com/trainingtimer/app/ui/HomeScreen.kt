@@ -556,13 +556,13 @@ private fun ExercisesTab(
 }
 
 @Composable
-fun SearchField(value: String, onChange: (String) -> Unit) {
+fun SearchField(value: String, onChange: (String) -> Unit, background: Color = C.Surface) {
     Row(
         Modifier
             .fillMaxWidth()
             .height(48.dp)
             .clip(RoundedCornerShape(24.dp))
-            .background(C.Surface)
+            .background(background)
             .padding(start = 16.dp, end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

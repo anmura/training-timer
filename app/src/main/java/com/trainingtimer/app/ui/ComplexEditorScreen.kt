@@ -697,7 +697,12 @@ private fun ExercisePickerSheet(
     val selected = remember { mutableStateListOf<String>() }
     val sorted = remember(exercises) { exercises.sortedBy { it.name.lowercase() } }
     var catFilter by remember { mutableStateOf<String?>(null) }
-    val shown = sorted.inCategory(catFilter)
+    var query by remember { mutableStateOf("") }
+    val searched = remember(sorted, query) {
+        val q = query.trim()
+        if (q.isEmpty()) sorted else sorted.filter { it.name.contains(q, ignoreCase = true) }
+    }
+    val shown = searched.inCategory(catFilter)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = C.Surface) {
         Column(
             Modifier
@@ -706,7 +711,15 @@ private fun ExercisePickerSheet(
         ) {
             Text(title, fontFamily = Condensed, fontSize = 30.sp, color = C.Text)
             Spacer(Modifier.height(12.dp))
-            CategoryFilterRow(categories, sorted, catFilter, { catFilter = it }, Modifier.padding(bottom = 10.dp), horizontalPadding = 0.dp)
+            SearchField(query, onChange = { query = it }, background = C.Surface2)
+            Spacer(Modifier.height(10.dp))
+            CategoryFilterRow(categories, searched, catFilter, { catFilter = it }, Modifier.padding(bottom = 10.dp), horizontalPadding = 0.dp)
+            if (shown.isEmpty()) {
+                Text(
+                    if (query.isNotBlank()) "No exercise matches “${query.trim()}”." else "No exercises in this category yet.",
+                    fontSize = 14.sp, color = C.Muted, modifier = Modifier.padding(vertical = 16.dp),
+                )
+            }
             LazyColumn(
                 Modifier.weight(1f, fill = false),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -745,7 +758,12 @@ private fun AddCycleSheet(
     val times = remember { mutableStateMapOf<String, Int>() }
     val sorted = remember(exercises) { exercises.sortedBy { it.name.lowercase() } }
     var catFilter by remember { mutableStateOf<String?>(null) }
-    val shown = sorted.inCategory(catFilter)
+    var query by remember { mutableStateOf("") }
+    val searched = remember(sorted, query) {
+        val q = query.trim()
+        if (q.isEmpty()) sorted else sorted.filter { it.name.contains(q, ignoreCase = true) }
+    }
+    val shown = searched.inCategory(catFilter)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = C.Surface) {
         Column(
             Modifier
@@ -780,7 +798,15 @@ private fun AddCycleSheet(
                 )
             }
             SectionLabel("Exercises in cycle", Modifier.padding(top = 8.dp, bottom = 6.dp), trailing = "Time per round")
-            CategoryFilterRow(categories, sorted, catFilter, { catFilter = it }, Modifier.padding(bottom = 8.dp), horizontalPadding = 0.dp)
+            SearchField(query, onChange = { query = it }, background = C.Surface2)
+            Spacer(Modifier.height(10.dp))
+            CategoryFilterRow(categories, searched, catFilter, { catFilter = it }, Modifier.padding(bottom = 8.dp), horizontalPadding = 0.dp)
+            if (shown.isEmpty()) {
+                Text(
+                    if (query.isNotBlank()) "No exercise matches “${query.trim()}”." else "No exercises in this category yet.",
+                    fontSize = 14.sp, color = C.Muted, modifier = Modifier.padding(vertical = 16.dp),
+                )
+            }
             LazyColumn(
                 Modifier.weight(1f, fill = false),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
