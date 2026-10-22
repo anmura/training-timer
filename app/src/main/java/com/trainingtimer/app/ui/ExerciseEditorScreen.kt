@@ -52,6 +52,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.trainingtimer.app.data.Exercise
+import com.trainingtimer.app.data.MAX_EXERCISE_NAME
 import com.trainingtimer.app.data.ExerciseIcons
 import com.trainingtimer.app.data.Repo
 import com.trainingtimer.app.data.UiIcons
@@ -185,13 +186,16 @@ fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClos
             OutlinedTextField(
                 value = name,
                 onValueChange = {
-                    name = it
+                    name = it.take(MAX_EXERCISE_NAME)
                     error = null
                 },
                 label = { Text("Name") },
                 singleLine = true,
                 isError = error != null,
-                supportingText = { error?.let { Text(it) } },
+                supportingText = {
+                    val e = error
+                    if (e != null) Text(e) else Text("${name.length} / $MAX_EXERCISE_NAME", color = if (name.length >= MAX_EXERCISE_NAME) C.Orange else C.Muted)
+                },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = C.Lime,

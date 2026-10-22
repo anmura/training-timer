@@ -64,6 +64,9 @@ fun formatWeight(w: Double, unit: String): String {
 }
 
 const val DEFAULT_REPS = 10
+
+/** Longest exercise name: it must fit the 3-line title on the workout screen. */
+const val MAX_EXERCISE_NAME = 60
 const val MAX_REPS = 999
 
 sealed class ComplexItem {

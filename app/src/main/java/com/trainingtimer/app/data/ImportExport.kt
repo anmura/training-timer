@@ -108,9 +108,9 @@ object ImportExport {
                 var catNames: List<String> = emptyList()
                 var usesWeight = false
                 when (entry) {
-                    is String -> name = entry.trim()
+                    is String -> name = entry.trim().take(MAX_EXERCISE_NAME).trim()
                     is JSONObject -> {
-                        name = stringOrEmpty(entry, "name")
+                        name = stringOrEmpty(entry, "name").take(MAX_EXERCISE_NAME).trim()
                         icon = stringOrEmpty(entry, "icon").lowercase().ifEmpty { null }
                         usesWeight = entry.optBoolean("usesWeight", false)
                         val ca = entry.optJSONArray("categories")
@@ -239,7 +239,7 @@ object ImportExport {
         errors: MutableList<String>,
         create: (String) -> Exercise,
     ): Step? {
-        val exName = stringOrEmpty(o, "exercise")
+        val exName = stringOrEmpty(o, "exercise").take(MAX_EXERCISE_NAME).trim()
         if (exName.isEmpty()) {
             errors += "Complex \"$complexName\": an exercise without a name was skipped"
             return null

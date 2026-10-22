@@ -275,34 +275,44 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
     ) {
         WorkoutHeader(s, onClose, muted = C.Muted, badgeBg = C.LimeDim, badgeFg = C.Lime, flash = announcing)
         SegmentBar(s, C.Lime)
-        // The full exercise name, on as many lines as it needs; the timer below shrinks to fit.
-        Row(
+        // The name always gets the same room (up to 3 lines, the font shrinks for long names),
+        // so the timer below has the same size and place for every exercise.
+        Box(
             Modifier
                 .fillMaxWidth()
-                .padding(start = 20.dp, end = 20.dp, top = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+                .height(TITLE_BLOCK)
+                .padding(start = 20.dp, end = 20.dp, top = 12.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            ExerciseIcon(p.exercise.icon, tileSize = 52.dp, iconSize = 30.dp, tile = C.Surface, corner = 16.dp, strokeWidth = 1.6f)
-            Spacer(Modifier.width(12.dp))
-            FitText(
-                p.exercise.name,
-                maxFontSize = 34.sp,
-                minFontSize = 20.sp,
-                maxLines = 4,
-                fontFamily = Condensed,
-                modifier = Modifier.weight(1f, fill = false),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ExerciseIcon(p.exercise.icon, tileSize = 52.dp, iconSize = 30.dp, tile = C.Surface, corner = 16.dp, strokeWidth = 1.6f)
+                Spacer(Modifier.width(12.dp))
+                FitText(
+                    p.exercise.name,
+                    maxFontSize = 32.sp,
+                    minFontSize = 20.sp,
+                    maxLines = 3,
+                    fontFamily = Condensed,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+            }
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-            // The round ring sits outside the timer, so leave room for it.
-            val roundsRoom = (if (rounds != null) ROUND_RING_ROOM * 2 else 0.dp) + (if (p.weight != null) 64.dp else 0.dp)
-            val ringSize = minOf(maxWidth - 64.dp - roundsRoom, maxHeight - 150.dp - roundsRoom, 320.dp).coerceAtLeast(120.dp)
-            val repsRingSize = minOf(maxWidth - 64.dp - roundsRoom, maxHeight - 240.dp - roundsRoom, 290.dp).coerceAtLeast(110.dp)
+            // One timer size for every set: timed or reps, in a cycle or not, with weight or not.
+            // Room is kept for the round ring, the weight and the reps controls even when a set has none.
+            val inner = minOf(
+                maxWidth - 64.dp - ROUND_RING_ROOM * 2,
+                maxHeight - BELOW_RING - ROUND_RING_ROOM * 2,
+                290.dp,
+            ).coerceAtLeast(110.dp)
+            val ringSize = inner
+            val repsRingSize = inner
             Column(
-                Modifier.fillMaxSize(),
+                Modifier
+                    .fillMaxSize()
+                    .padding(top = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 if (p.isReps) {
                     RepsRing(s, repsRingSize, rounds)
@@ -418,16 +428,23 @@ private fun Phase.valueLabel(): String = if (reps != null) "×$reps" else format
 
 private val ROUND_RING_ROOM = 18.dp
 
+/** Height kept for the exercise name: three lines of the title font. */
+private val TITLE_BLOCK = 124.dp
+
+/** Space under the timer: stopwatch line, weight, Done, previous/skip and the gaps (the reps layout, the tallest). */
+private val BELOW_RING = 12.dp + 34.dp + 62.dp + 90.dp + 66.dp + 16.dp
+
 /** Round progress of a cycle shown around the timer. [sweep] draws in the current round's segment. */
 private data class RoundRingState(val round: Int, val rounds: Int, val sweep: Float, val announcing: Boolean)
 
 @Composable
 private fun WithRoundRing(rounds: RoundRingState?, innerSize: Dp, content: @Composable () -> Unit) {
+    val outer = innerSize + ROUND_RING_ROOM * 2
     if (rounds == null) {
-        content()
+        // Same footprint without a cycle, so the timer stays in place.
+        Box(Modifier.size(outer), contentAlignment = Alignment.Center) { content() }
         return
     }
-    val outer = innerSize + ROUND_RING_ROOM * 2
     Box(Modifier.size(outer), contentAlignment = Alignment.Center) {
         RoundSegments(rounds, outer)
         content()
