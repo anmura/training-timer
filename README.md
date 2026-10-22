@@ -13,14 +13,14 @@ No account, no ads, no internet connection. All data stays on the phone.
 ## Features
 
 **Exercise library**
-- Exercises with a name and an icon: 75+ built-in line icons in one style
+- Exercises with a name (up to 60 characters) and an icon: 75+ built-in line icons in one style
 - Categories with colours; an exercise can belong to several categories or to none
 - Filter chips and a grouped list by category, plus search
 - Ready-made exercises for mobility, strength, stretching and wrists, plus 12 pull-up variations
 - An exercise can be marked **Uses weight** (dumbbells, kettlebell, barbell)
 
 **Complex builder**
-- Pick exercises with checkboxes, then set the time of each one (−/+ in 5-second steps, or tap the time to type it)
+- Pick exercises with checkboxes (with search and category filters), then set the time of each one (−/+ in 5-second steps, or tap the time to type it)
 - Switch any exercise between **Time** and **Reps**: a reps set has a target count (for example ×12) instead of a timer
 - Cycles: a group of exercises repeated N rounds, with its own optional rest between exercises
 - One rest time for the whole complex; no rest is added after the last exercise
@@ -33,6 +33,7 @@ No account, no ads, no internet connection. All data stays on the phone.
 **Workout**
 - Optional "get ready" countdown before the first exercise (0–15 s, set in Settings)
 - Large timer ring with the full exercise name, progress for every set and time left (one continuous bar for more than 40 sets)
+- The timer has the same size and place for every set: the name gets a fixed three-line block (long names use a smaller font), and room is kept for the round ring, weight and reps controls
 - In a cycle: a **round ring** around the timer with one segment per round and a *2/3* badge in the header
 - **New round** animation: the next segment draws in with a glow, *Round 2 of 3* appears on the timer, the badge flashes, and a distinct triple beep and buzz play
 - Reps sets show the target count and a small stopwatch; tap the big **Done** button when you finish and the next rest starts
@@ -45,7 +46,7 @@ No account, no ads, no internet connection. All data stays on the phone.
 **Weights**
 - Mark an exercise as **Uses weight** in its settings; choose kg or lb in Settings
 - Set the weight in the complex: one weight, or in a cycle a weight **per round**
-- Per round: **Fill** from a start weight and a step (e.g. 10 kg, +2), then change any round by hand; edited rounds are marked
+- Per round: **Fill all rounds** from a start weight and a step per round (e.g. 10 kg, +2 kg); the button shows the result before you tap it. Then change any round by hand; edited rounds are marked
 - A cycle can mix weighted and bodyweight exercises; each weighted exercise has its own Same / Per round setting, and per-round weights fold into one line until you tap Edit
 - Tap any weight to type it (decimals allowed); − / + change it by 1 kg or 2.5 lb
 - During the workout the planned weight is shown with the set, in the Next card, on the rest screen and in the notification; it is not changed there
@@ -61,6 +62,7 @@ No account, no ads, no internet connection. All data stays on the phone.
 **Import and export**
 - Import exercises and complexes from a JSON file; existing names are skipped and a summary lists what was added, skipped or not readable
 - Exercises a complex needs but your library doesn't have are created with a "?" icon
+- Names longer than 60 characters are shortened
 - Export all exercises, one complex, all complexes, or a full backup
 
 ## Screenshots
