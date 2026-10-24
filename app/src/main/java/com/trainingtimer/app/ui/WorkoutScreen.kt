@@ -866,7 +866,9 @@ private fun RestView(s: WorkoutState, onClose: () -> Unit) {
                 Spacer(Modifier.width(18.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     FitText(p.exercise.name, maxFontSize = 36.sp, minFontSize = 18.sp, maxLines = 5, fontFamily = Condensed)
-                    Text(p.valueLabel(), fontFamily = Condensed, fontSize = 30.sp, color = if (p.reps != null) C.Sky else C.Lime)
+                    // The upcoming exercise's own time (or reps), not the length of this rest.
+                    val up = s.nextWork ?: p
+                    Text(up.valueLabel(), fontFamily = Condensed, fontSize = 30.sp, color = if (up.reps != null) C.Sky else C.Lime)
                     p.weight?.let { Text(weightLabel(it), fontFamily = Condensed, fontSize = 24.sp, color = C.Violet) }
                 }
             }
