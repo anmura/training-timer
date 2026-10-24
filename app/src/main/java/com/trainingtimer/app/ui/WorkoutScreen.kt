@@ -347,8 +347,9 @@ private fun TimerRing(
 }
 
 private fun fractionLeft(s: WorkoutState): Float {
-    val total = s.phase.seconds * 1000f
-    return if (total <= 0f) 0f else (s.remainingMs / total)
+    // Includes time added with +10 s, so the ring starts shrinking right away.
+    val total = maxOf(s.phaseTotalMs, s.phase.seconds * 1000L).toFloat()
+    return if (total <= 0f) 0f else (s.remainingMs / total).coerceIn(0f, 1f)
 }
 
 // ---------- exercise ----------

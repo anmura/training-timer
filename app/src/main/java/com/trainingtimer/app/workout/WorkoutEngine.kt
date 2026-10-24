@@ -65,6 +65,8 @@ data class WorkoutState(
     val repsSets: Int = 0,
     /** Real time the workout took, pauses excluded; set when it finishes. */
     val actualSeconds: Int = 0,
+    /** Full length of the current timed phase including time added with +10 s; drives the ring. */
+    val phaseTotalMs: Long = 0,
 ) {
     /** Reps sets after the current phase; their time is unknown, so "time left" can't include them. */
     val repsSetsAhead: Int get() = phases.drop(index + 1).count { it.isReps }
@@ -133,6 +135,7 @@ object WorkoutEngine {
             phases = phases,
             index = 0,
             remainingMs = first.seconds * 1000L,
+            phaseTotalMs = first.seconds * 1000L,
             paused = false,
             finished = false,
             totalWork = phases.count { it.type == PhaseType.WORK },
@@ -176,7 +179,7 @@ object WorkoutEngine {
     fun previous() {
         val s = _state.value ?: return
         if (s.finished) return
-        val elapsed = if (s.phase.isReps) s.elapsedMs else s.phase.seconds * 1000L - s.remainingMs
+        val elapsed = if (s.phase.isReps) s.elapsedMs else s.phaseTotalMs - s.remainingMs
         if (elapsed > 3000 || s.index == 0) goTo(s.index) else goTo(s.index - 1)
     }
 
@@ -185,10 +188,10 @@ object WorkoutEngine {
         if (s.finished || s.phase.isReps) return
         lastBeepSecond = -1
         if (s.paused) {
-            _state.value = s.copy(remainingMs = s.remainingMs + seconds * 1000L)
+            _state.value = s.copy(remainingMs = s.remainingMs + seconds * 1000L, phaseTotalMs = s.phaseTotalMs + seconds * 1000L)
         } else {
             endAt += seconds * 1000L
-            _state.value = s.copy(remainingMs = endAt - now())
+            _state.value = s.copy(remainingMs = endAt - now(), phaseTotalMs = s.phaseTotalMs + seconds * 1000L)
         }
     }
 
@@ -250,7 +253,7 @@ object WorkoutEngine {
         endAt = now() + p.seconds * 1000L
         startedAt = now()
         lastBeepSecond = -1
-        _state.value = s.copy(index = i, remainingMs = p.seconds * 1000L, elapsedMs = 0)
+        _state.value = s.copy(index = i, remainingMs = p.seconds * 1000L, elapsedMs = 0, phaseTotalMs = p.seconds * 1000L)
         signalPhaseStart(p)
     }
 

@@ -748,17 +748,21 @@ fun FitText(
     onOverflow: ((Boolean) -> Unit)? = null,
 ) {
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    // Measure with the same style the Text gets (the theme adds letter spacing), or the guess comes out too big.
+    val baseStyle = androidx.compose.material3.LocalTextStyle.current
     androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
         val widthPx = constraints.maxWidth
-        val size = remember(text, widthPx, maxFontSize, minFontSize, maxLines) {
+        val guess = remember(text, widthPx, maxFontSize, minFontSize, maxLines, baseStyle) {
             var s = maxFontSize.value
             val words = text.split(' ', '\n').filter { it.isNotEmpty() }
             while (s > minFontSize.value) {
-                val style = androidx.compose.ui.text.TextStyle(
-                    fontSize = s.sp,
-                    lineHeight = (s * 1.12f).sp,
-                    fontFamily = fontFamily,
-                    fontWeight = fontWeight,
+                val style = baseStyle.merge(
+                    androidx.compose.ui.text.TextStyle(
+                        fontSize = s.sp,
+                        lineHeight = (s * 1.12f).sp,
+                        fontFamily = fontFamily,
+                        fontWeight = fontWeight,
+                    ),
                 )
                 val widest = words.maxOfOrNull { w -> measurer.measure(w, style, maxLines = 1, softWrap = false).size.width } ?: 0
                 if (widest <= widthPx) {
@@ -773,6 +777,9 @@ fun FitText(
             }
             s.coerceAtLeast(minFontSize.value)
         }
+        // Safety net: if the real layout still overflows, step the size down until it fits or hits the minimum.
+        var shrink by remember(guess) { mutableStateOf(0f) }
+        val size = (guess - shrink).coerceAtLeast(minFontSize.value)
         Text(
             text,
             fontSize = size.sp,
@@ -783,7 +790,10 @@ fun FitText(
             textAlign = textAlign,
             maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
-            onTextLayout = { r -> onOverflow?.invoke(r.hasVisualOverflow) },
+            onTextLayout = { r ->
+                if (r.hasVisualOverflow && size > minFontSize.value) shrink += 2f
+                else onOverflow?.invoke(r.hasVisualOverflow)
+            },
         )
     }
 }
