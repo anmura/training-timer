@@ -12,6 +12,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -367,6 +368,10 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
         }
     }
     val rounds = if (p.rounds > 0) RoundRingState(p.round, p.rounds, sweep.value, announcing) else null
+    // Long names that don't fit in three lines open in a card over the timer (tap again to close).
+    var nameCut by remember(p.exercise.id) { mutableStateOf(false) }
+    var nameOpen by remember(s.index) { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize()) {
     Column(
         Modifier
             .fillMaxSize()
@@ -383,7 +388,16 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                 .padding(start = 20.dp, end = 20.dp, top = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = if (nameCut) {
+                    Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable(onClickLabel = "Show full name") { nameOpen = true }
+                } else {
+                    Modifier
+                },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 ExerciseIcon(p.exercise.icon, tileSize = 52.dp, iconSize = 30.dp, tile = C.Surface, corner = 16.dp, strokeWidth = 1.6f)
                 Spacer(Modifier.width(12.dp))
                 FitText(
@@ -393,7 +407,21 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                     maxLines = 3,
                     fontFamily = Condensed,
                     modifier = Modifier.weight(1f, fill = false),
+                    onOverflow = { nameCut = it },
                 )
+                if (nameCut) {
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        Modifier
+                            .align(Alignment.Bottom)
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(C.Surface2),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        PathIcon(UiIcons.CHEVRON_DOWN, C.Lime, size = 18.dp, strokeWidth = 2.6f)
+                    }
+                }
             }
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
@@ -468,6 +496,58 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
             }
         }
         NextCard(s)
+    }
+    FullNameCard(p, visible = nameOpen, onClose = { nameOpen = false })
+    }
+}
+
+/** Variant A: the full exercise name in a card over the timer; the rest of the screen is dimmed. Any tap closes it. */
+@Composable
+private fun FullNameCard(p: Phase, visible: Boolean, onClose: () -> Unit) {
+    val quiet = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    androidx.compose.animation.AnimatedVisibility(visible, enter = fadeIn(tween(180)), exit = fadeOut(tween(180))) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color(0x9E08090A))
+                .clickable(interactionSource = quiet, indication = null, onClickLabel = "Collapse name") { onClose() },
+        )
+    }
+    androidx.compose.animation.AnimatedVisibility(
+        visible,
+        enter = fadeIn(tween(200)) + scaleIn(tween(200), initialScale = 0.96f),
+        exit = fadeOut(tween(160)),
+    ) {
+        Column(
+            Modifier
+                .padding(start = 12.dp, end = 12.dp, top = 84.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(C.Surface)
+                .border(1.dp, C.Surface3, RoundedCornerShape(24.dp))
+                .clickable(interactionSource = quiet, indication = null, onClickLabel = "Collapse name") { onClose() }
+                .padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Row(verticalAlignment = Alignment.Top) {
+                ExerciseIcon(p.exercise.icon, tileSize = 52.dp, iconSize = 30.dp, tile = C.Surface2, corner = 16.dp, strokeWidth = 1.6f)
+                Spacer(Modifier.width(12.dp))
+                Text(p.exercise.name, fontFamily = Condensed, fontSize = 34.sp, lineHeight = 37.sp, color = C.Text)
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(C.Surface2),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PathIcon(UiIcons.CHEVRON_UP, C.Lime, size = 16.dp, strokeWidth = 2.6f)
+                Spacer(Modifier.width(6.dp))
+                Text("Tap to collapse", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = C.Lime)
+            }
+        }
     }
 }
 

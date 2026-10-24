@@ -744,6 +744,8 @@ fun FitText(
     fontFamily: androidx.compose.ui.text.font.FontFamily? = null,
     fontWeight: FontWeight? = null,
     textAlign: TextAlign? = null,
+    /** Called with true when the text doesn't fit even at [minFontSize] and is cut with an ellipsis. */
+    onOverflow: ((Boolean) -> Unit)? = null,
 ) {
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
@@ -781,6 +783,7 @@ fun FitText(
             textAlign = textAlign,
             maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
+            onTextLayout = { r -> onOverflow?.invoke(r.hasVisualOverflow) },
         )
     }
 }

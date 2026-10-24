@@ -113,6 +113,8 @@ object UiIcons {
     const val TIMER = "M12 13l3-3M9 2h6M12 22a8 8 0 1 0 0-16a8 8 0 1 0 0 16"
     const val IMPORT_EXPORT = "M7 4v12M3 12l4 4 4-4M17 20V8M13 12l4-4 4 4"
     const val DOWNLOAD = "M12 3v12M7 10l5 5 5-5M5 21h14"
+    const val CHEVRON_DOWN = "M6 9l6 6 6-6"
+    const val CHEVRON_UP = "M6 15l6-6 6 6"
     const val UPLOAD = "M12 15V3M7 8l5-5 5 5M5 21h14"
     const val BACKUP = "M4 7h16v13H4zM4 7l2-3h12l2 3M9 12h6"
     const val IMAGE = "M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9h.01"
