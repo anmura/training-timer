@@ -386,7 +386,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                 .fillMaxWidth()
                 .height(TITLE_BLOCK)
                 .padding(start = 20.dp, end = 20.dp, top = 12.dp),
-            contentAlignment = Alignment.Center,
+            contentAlignment = Alignment.CenterStart,
         ) {
             Row(
                 modifier = if (nameCut) {
