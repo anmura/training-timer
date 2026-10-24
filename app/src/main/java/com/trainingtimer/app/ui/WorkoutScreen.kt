@@ -398,10 +398,11 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
             // One timer size for every set: timed or reps, in a cycle or not, with weight or not.
-            // Room is kept for the round ring, the weight and the reps controls even when a set has none.
+            // Room is kept for the round ring, and for the weight and reps controls if any set of this workout has them.
+            val below = remember(s.phases) { belowRing(s.phases) }
             val inner = minOf(
                 maxWidth - 64.dp - ROUND_RING_ROOM * 2,
-                maxHeight - BELOW_RING - ROUND_RING_ROOM * 2,
+                maxHeight - below - ROUND_RING_ROOM * 2,
                 290.dp,
             ).coerceAtLeast(110.dp)
             val ringSize = inner
@@ -530,8 +531,20 @@ private val ROUND_RING_ROOM = 18.dp
 /** Height kept for the exercise name: three lines of the title font. */
 private val TITLE_BLOCK = 124.dp
 
-/** Space under the timer: stopwatch line, weight, Done, previous/skip and the gaps (the reps layout, the tallest). */
-private val BELOW_RING = 12.dp + 34.dp + 62.dp + 90.dp + 66.dp + 16.dp
+/**
+ * Space kept under the timer. It depends only on what the whole workout contains, so the timer
+ * keeps one size for the entire workout but doesn't shrink for controls this workout never shows.
+ * Timed set: top gap + play/pause controls. Reps set: stopwatch line + Done + previous/skip.
+ * Plus the weight pill when any exercise uses weight, and a bottom margin.
+ */
+private fun belowRing(phases: List<Phase>): Dp {
+    val work = phases.filter { it.type == PhaseType.WORK }
+    val timed = 12.dp + 14.dp + 88.dp
+    val reps = 12.dp + 14.dp + 20.dp + 14.dp + 76.dp + 14.dp + 52.dp
+    val controls = if (work.any { it.isReps }) maxOf(timed, reps) else timed
+    val weight = if (work.any { it.weight != null }) 48.dp + 14.dp else 0.dp
+    return controls + weight + 16.dp
+}
 
 /** Round progress of a cycle shown around the timer. [sweep] draws in the current round's segment. */
 private data class RoundRingState(val round: Int, val rounds: Int, val sweep: Float, val announcing: Boolean)
@@ -626,6 +639,8 @@ private fun NextCard(s: WorkoutState) {
         Modifier
             .padding(start = 12.dp, end = 12.dp, bottom = 16.dp)
             .fillMaxWidth()
+            // Fixed height (fits a two-line name) so the timer above never changes size.
+            .height(88.dp)
             .clip(RoundedCornerShape(22.dp))
             .background(C.Surface)
             .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -648,7 +663,7 @@ private fun NextCard(s: WorkoutState) {
                     "NEXT"
                 }
                 Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.2.sp, color = C.Muted)
-                Text(next.exercise.name, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = C.Text, lineHeight = 21.sp)
+                Text(next.exercise.name, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = C.Text, lineHeight = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(next.valueLabel(), fontFamily = Condensed, fontSize = 26.sp, color = if (next.reps != null) C.Sky else C.Text)
