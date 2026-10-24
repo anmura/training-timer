@@ -33,7 +33,8 @@ No account, no ads, no internet connection. All data stays on the phone.
 **Workout**
 - Optional "get ready" countdown before the first exercise (0–15 s, set in Settings)
 - Large timer ring with the full exercise name, progress line and time left
-- The timer has the same size and place for every set: the name gets a fixed three-line block (long names use a smaller font), and room is kept for the round ring, weight and reps controls
+- The timer has the same size and place for every set of a workout: the name gets a fixed three-line block (long names use a smaller font), and room is kept only for the round ring, weight and reps controls the workout actually uses
+- Names too long for three lines show a ⌄ button: tap the name to read it in full in a card over the timer, tap again to close
 - **Progress line with cycles**: every set is a segment, cycles sit on their own band and rounds are spaced apart; the current set is white. In big complexes the block you are in keeps per-set detail and takes at least half the line, while other cycles shrink to one segment per round (or per cycle)
 - In a cycle: a **round ring** around the timer with one segment per round (the current round is white) and a *2/3* badge in the header
 - **New round** animation: the next segment draws in with a glow, *Round 2 of 3* appears on the timer, the badge flashes, and a distinct triple beep and buzz play
