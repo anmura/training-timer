@@ -59,6 +59,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import com.trainingtimer.app.data.UiIcons
+import com.trainingtimer.app.data.isRepeat
+import com.trainingtimer.app.data.timeLabel
 import com.trainingtimer.app.data.Repo
 import com.trainingtimer.app.data.formatTime
 import com.trainingtimer.app.data.formatWeight
@@ -963,6 +965,7 @@ private fun FinishedView(s: WorkoutState, onDone: () -> Unit) {
             Stat(formatTime(s.actualSeconds), "total time")
             Stat("${s.totalWork}", "exercise sets")
         }
+        NextRepeatCard()
         Spacer(Modifier.height(40.dp))
         BigButton("Done", onClick = onDone, icon = UiIcons.CHECK, modifier = Modifier.fillMaxWidth())
     }
@@ -1036,5 +1039,37 @@ private fun RingLabel(text: String, color: Color, breathe: Boolean) {
         }
     } else {
         Text(text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp, color = color)
+    }
+}
+
+/** After a workout started from a repeating reminder: when the next one comes (its step restarted just now). */
+@Composable
+private fun NextRepeatCard() {
+    val data by Repo.state.collectAsStateWithLifecycle()
+    val now = System.currentTimeMillis()
+    val r = data.reminders.firstOrNull { it.isRepeat && it.enabled && !it.awaitingWorkout && now - it.anchor in 0..120_000 } ?: return
+    val next = com.trainingtimer.app.reminders.ReminderScheduler.nextTrigger(r) ?: return
+    Spacer(Modifier.height(20.dp))
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(C.Surface)
+            .border(1.5.dp, C.RestLine, RoundedCornerShape(20.dp))
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(C.AlarmBg),
+            contentAlignment = Alignment.Center,
+        ) { PathIcon(UiIcons.REPEAT, C.Orange, size = 24.dp, strokeWidth = 2.2f) }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text("Next reminder ${com.trainingtimer.app.reminders.ReminderScheduler.whenLabel(next)}", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
+            Text("${r.timeLabel()}, counted from the end of this workout", fontSize = 12.sp, color = C.Muted)
+        }
     }
 }
