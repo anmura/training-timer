@@ -194,9 +194,10 @@ fun ChosenSection(title: String, count: Int, addLabel: String, onAdd: () -> Unit
                     .padding(start = 8.dp, end = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PathIcon(UiIcons.PLUS, C.Lime, size = 16.dp, strokeWidth = 2.6f)
+                // "Edit" once something is chosen; "Add" while the list is empty.
+                PathIcon(if (count > 0) UiIcons.EDIT else UiIcons.PLUS, C.Lime, size = 16.dp, strokeWidth = if (count > 0) 2.2f else 2.6f)
                 Spacer(Modifier.width(4.dp))
-                Text("Add", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = C.Lime)
+                Text(if (count > 0) "Edit" else "Add", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = C.Lime)
             }
         }
         if (count == 0) {
