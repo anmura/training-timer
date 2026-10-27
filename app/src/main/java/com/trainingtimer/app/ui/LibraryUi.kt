@@ -70,6 +70,7 @@ import com.trainingtimer.app.data.Exercise
 import com.trainingtimer.app.data.MAX_EQUIPMENT_NAME
 import com.trainingtimer.app.data.Repo
 import com.trainingtimer.app.data.UiIcons
+import com.trainingtimer.app.data.exerciseIds
 
 /** A list of ids that survives leaving the screen for another one and coming back. */
 @Composable
