@@ -1,0 +1,369 @@
+{
+ "version": 1,
+ "categories": [
+  {
+   "name": "Кардио",
+   "color": "#FF7A9C"
+  }
+ ],
+ "exercises": [
+  {
+   "name": "Бёрпи",
+   "icon": "jump",
+   "categories": [
+    "Кардио",
+    "Силовые"
+   ]
+  },
+  {
+   "name": "Прыжки «звёздочка»",
+   "icon": "jacks",
+   "categories": [
+    "Кардио"
+   ]
+  },
+  {
+   "name": "Бег на месте с высоким подниманием колен",
+   "icon": "run",
+   "categories": [
+    "Кардио"
+   ]
+  },
+  {
+   "name": "Скалолаз",
+   "icon": "plank",
+   "categories": [
+    "Кардио",
+    "Силовые"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Прыжки со скакалкой",
+   "icon": "rope",
+   "categories": [
+    "Кардио"
+   ],
+   "equipment": [
+    "Скакалка"
+   ]
+  },
+  {
+   "name": "Приседания с выпрыгиванием",
+   "icon": "jump",
+   "categories": [
+    "Кардио",
+    "Силовые"
+   ]
+  },
+  {
+   "name": "Конькобежец",
+   "icon": "sidelunge",
+   "categories": [
+    "Кардио"
+   ]
+  },
+  {
+   "name": "Планка",
+   "icon": "plank",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Боковая планка, левая сторона",
+   "icon": "plank",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Боковая планка, правая сторона",
+   "icon": "plank",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Скручивания",
+   "icon": "abs",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Велосипед",
+   "icon": "abs",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Русский твист",
+   "icon": "sidetwist",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Ножницы",
+   "icon": "legraise",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Супермен",
+   "icon": "ytw",
+   "categories": [
+    "Силовые",
+    "Мобильность"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Мёртвый жук",
+   "icon": "hollow",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Птица-собака",
+   "icon": "catcow",
+   "categories": [
+    "Силовые",
+    "Мобильность"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Выпады назад",
+   "icon": "lunge",
+   "categories": [
+    "Силовые"
+   ]
+  },
+  {
+   "name": "Сумо-приседания",
+   "icon": "squat",
+   "categories": [
+    "Силовые"
+   ]
+  },
+  {
+   "name": "Стульчик у стены",
+   "icon": "squat",
+   "categories": [
+    "Силовые"
+   ]
+  },
+  {
+   "name": "Подъёмы на носки",
+   "icon": "calf",
+   "categories": [
+    "Силовые"
+   ]
+  },
+  {
+   "name": "Зашагивания на скамью",
+   "icon": "lunge",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Скамья"
+   ]
+  },
+  {
+   "name": "Ягодичный мостик на одной ноге",
+   "icon": "glutebridge",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Отжимания с широкой постановкой рук",
+   "icon": "pushup",
+   "categories": [
+    "Силовые"
+   ]
+  },
+  {
+   "name": "Отжимания с колен",
+   "icon": "pushup",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Коврик"
+   ]
+  },
+  {
+   "name": "Обратные отжимания от скамьи",
+   "icon": "dips",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Скамья"
+   ]
+  },
+  {
+   "name": "Жим гантелей лёжа",
+   "icon": "dumbbell",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Гантели",
+    "Скамья"
+   ],
+   "usesWeight": true
+  },
+  {
+   "name": "Жим гантелей стоя",
+   "icon": "dumbbell",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Гантели"
+   ],
+   "usesWeight": true
+  },
+  {
+   "name": "Тяга гантели в наклоне",
+   "icon": "dumbbell",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Гантели"
+   ],
+   "usesWeight": true
+  },
+  {
+   "name": "Сгибания на бицепс",
+   "icon": "dumbbell",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Гантели"
+   ],
+   "usesWeight": true
+  },
+  {
+   "name": "Французский жим гантелью",
+   "icon": "dumbbell",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Гантели"
+   ],
+   "usesWeight": true
+  },
+  {
+   "name": "Махи гантелями в стороны",
+   "icon": "dumbbell",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Гантели"
+   ],
+   "usesWeight": true
+  },
+  {
+   "name": "Румынская тяга с гантелями",
+   "icon": "dumbbell",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Гантели"
+   ],
+   "usesWeight": true
+  },
+  {
+   "name": "Гоблет-присед",
+   "icon": "squat",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Гантели"
+   ],
+   "usesWeight": true
+  },
+  {
+   "name": "Выпады с гантелями",
+   "icon": "lunge",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Гантели"
+   ],
+   "usesWeight": true
+  },
+  {
+   "name": "Махи гирей",
+   "icon": "kettlebell",
+   "categories": [
+    "Силовые",
+    "Кардио"
+   ],
+   "equipment": [
+    "Гиря"
+   ],
+   "usesWeight": true
+  },
+  {
+   "name": "Приседания с гирей",
+   "icon": "kettlebell",
+   "categories": [
+    "Силовые"
+   ],
+   "equipment": [
+    "Гиря"
+   ],
+   "usesWeight": true
+  }
+ ]
+}

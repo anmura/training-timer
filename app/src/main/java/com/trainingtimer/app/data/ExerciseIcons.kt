@@ -84,6 +84,15 @@ object ExerciseIcons {
         IconDef("lsitpull", "L-sit pull-up", "M3 3h18M8 3l2 6M16 3l-2 6M10.5 7a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M10 9h4M12 9v6M12 15h9"),
         IconDef("archerpull", "Archer pull-up", "M2 3h20M3.5 3l7 6M15 3l2 4-3 2M11.5 6.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M10.5 9H14M12.5 9v7M12.5 16l-2 5M12.5 16l2 5"),
         IconDef("pullupweight", "Weighted pull-up", "M3 3h18M8 3l2 6M16 3l-2 6M10.5 7a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M10 9h4M12 9v6M12 15l-2 3.5M12 15l2 3.5M12 13.5v4M10 17.5h4l1 4h-6z"),
+        IconDef("hangboard", "Hangboard hang", "M3 3h18v3H3zM7 4.5h2M15 4.5h2M9.5 6l.5 5M14.5 6l-.5 5M10.5 9a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M10 11h4M12 11v6M12 17v4.5"),
+        IconDef("hanglegraise", "Hanging leg raise", "M3 3h18M9.5 3l.5 7M14.5 3l-.5 7M10.5 8a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M10 10h4M12 10v6M12 16h8"),
+        IconDef("hangkneeraise", "Hanging knee raise", "M3 3h18M9.5 3l.5 7M14.5 3l-.5 7M10.5 8a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M10 10h4M12 10v6M12 16h5v5"),
+        IconDef("toestobar", "Toes to bar", "M3 3h18M9.5 3l.5 7M14.5 3l-.5 7M10.5 8a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M10 10h4M12 10v6M12 16l7-10"),
+        IconDef("armswing", "Arm swings", "M10.5 5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M12 7v7M12 14l-2 7M12 14l2 7M12 9l-7 3M12 9l7 3M3 8a9 9 0 0 1 5-4M21 8a9 9 0 0 0-5-4"),
+        IconDef("lockoff", "Lock-off", "M3 3h18M8 3l-1 5 4 1M16 3l1 5-4 1M10.5 6a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M12 9v7M12 16l-2 5M12 16l2 5"),
+        IconDef("hollow", "Hollow body", "M3 20h18M4.5 12a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M7.5 13.5c3 2.5 7 2.5 10 0l3-2M6 11l-3-3"),
+        IconDef("ytw", "Y-T-W raises", "M3 20h18M4.5 17a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0M7.5 18h12M6 16l-3-5M8.5 17l2-5"),
+        IconDef("fingerext", "Finger extensions", "M8 21v-8M8 13l-3-6M10 13l-1-8M12 13l1-8M14 13l3-6M5 10h12"),
         IconDef("unknown", "Unknown", "M8.5 8.5a3.5 3.5 0 1 1 5 3.2c-1 .5-1.5 1.2-1.5 2.3v1M12 19h.01"),
         IconDef("abwheel", "Ab wheel", "M2 21h20M5 21l2-6 7-2 4 3M14.0 10.5a1.5 1.5 0 1 0 3.0 0a1.5 1.5 0 1 0 -3.0 0M17.0 18.5a2.5 2.5 0 1 0 5.0 0a2.5 2.5 0 1 0 -5.0 0"),
     )
@@ -155,6 +164,7 @@ object EquipmentIcons {
         "stick" to "M4 20L20 4M3 17l4 4M17 3l4 4",
         "ball" to "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3.5 9h17M3.5 15h17",
         "chair" to "M7 3v9h10M7 12v9M17 12v9M7 16h10",
+        "fingerboard" to "M2 6h20v6H2zM6 9h3M15 9h3M10 12v2M14 12v2",
     )
     private val byKey = all.toMap()
     fun has(key: String): Boolean = byKey.containsKey(key)

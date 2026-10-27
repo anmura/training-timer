@@ -138,6 +138,8 @@ On first launch the app adds:
 
 - **Categories:** Мобильность (mobility), Силовые (strength), Растяжка (stretching)
 - **Exercises:** joint warm-up, shoulder mobility, bodyweight strength, stretching and wrist exercises, each with its own icon
+- **Climbing:** fingerboard hangs (open and half-crimp grip, 7/3 repeaters), lock-offs, Frenchies, offset pull-ups, toes to bar, hollow body, Y-T-W, finger extensions, band pull-aparts and external rotations, frog stretch — in a *Скалолазание* category, with a *Фингерборд* equipment item
+- **Classics:** burpees, jumping jacks, high knees, mountain climbers, jump rope, planks and side planks, crunches, bicycle, Russian twist, flutter kicks, superman, dead bug, bird-dog, lunges, sumo squats, wall sit, calf raises, step-ups, push-up variations, bench dips, dumbbell and kettlebell basics (weighted) — with a *Кардио* category
 - **Pull-ups:** wide, close, chin-up, neutral grip, inverted (Australian), negative, band-assisted, dead hang, scapular, L-sit, archer and weighted
 - **Complexes:** five base workouts that show every feature — single exercises, several cycles, repeats and per-cycle rest:
 

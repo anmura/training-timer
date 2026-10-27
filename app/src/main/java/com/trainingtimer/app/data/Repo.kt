@@ -47,6 +47,8 @@ object Repo {
         installAssetProgram("program_basics_v1", "program_basics.json")
         installAssetProgram("program_pullups_v1", "program_pullups.json")
         installEquipment()
+        installAssetProgram("program_climbing_v1", "program_climbing.json")
+        installAssetProgram("program_classic_v1", "program_classic.json")
     }
 
     /**
