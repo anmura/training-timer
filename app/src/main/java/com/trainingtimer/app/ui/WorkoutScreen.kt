@@ -498,6 +498,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
         }
         NextCard(s)
     }
+    EdgeGlow(announcing)
     FullNameCard(p, visible = nameOpen, onClose = { nameOpen = false })
     }
 }
@@ -967,5 +968,29 @@ private fun Stat(value: String, label: String) {
     ) {
         Text(value, fontFamily = Condensed, fontSize = 32.sp, color = C.Text)
         Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = C.Muted)
+    }
+}
+
+/** Variant F glow: the screen edges light up in lime while a new round is announced. */
+@Composable
+private fun EdgeGlow(on: Boolean) {
+    val a by animateFloatAsState(if (on) 1f else 0f, tween(if (on) 300 else 900), label = "edgeGlow")
+    if (a <= 0f) return
+    Canvas(Modifier.fillMaxSize()) {
+        val w = 64.dp.toPx()
+        val c = C.Lime.copy(alpha = 0.45f * a)
+        val clear = C.Lime.copy(alpha = 0f)
+        drawRect(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(c, clear), 0f, w), size = Size(size.width, w))
+        drawRect(
+            androidx.compose.ui.graphics.Brush.verticalGradient(listOf(clear, c), size.height - w, size.height),
+            topLeft = Offset(0f, size.height - w),
+            size = Size(size.width, w),
+        )
+        drawRect(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(c, clear), 0f, w), size = Size(w, size.height))
+        drawRect(
+            androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(clear, c), size.width - w, size.width),
+            topLeft = Offset(size.width - w, 0f),
+            size = Size(w, size.height),
+        )
     }
 }
