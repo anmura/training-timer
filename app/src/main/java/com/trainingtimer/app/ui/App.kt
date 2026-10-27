@@ -36,6 +36,9 @@ sealed interface Screen {
     data class ExerciseEditor(val id: String?) : Screen
     data class ComplexEditor(val id: String?) : Screen
     data object Settings : Screen
+    data object Categories : Screen
+    data object EquipmentList : Screen
+    data class EquipmentEditor(val id: String) : Screen
     data object Reminders : Screen
     data class ReminderEditor(val id: String?) : Screen
     data object Workout : Screen
@@ -52,8 +55,15 @@ fun App(onStartWorkout: (Complex) -> Unit) {
         stack.add(screen)
     }
 
+    // Keeps each screen's unsaved input while another screen is on top (e.g. exercise → equipment → back).
+    val saved = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
+    fun stateKey(i: Int) = "$i:${stack[i]}"
+
     fun pop() {
-        if (stack.size > 1) stack.removeAt(stack.lastIndex)
+        if (stack.size > 1) {
+            saved.removeState(stateKey(stack.lastIndex))
+            stack.removeAt(stack.lastIndex)
+        }
     }
 
     BackHandler(enabled = stack.size > 1) { pop() }
@@ -78,7 +88,9 @@ fun App(onStartWorkout: (Complex) -> Unit) {
             .fillMaxSize()
             .background(C.Bg),
     ) {
-        when (val top = stack.last()) {
+        val top = stack.last()
+        saved.SaveableStateProvider(stateKey(stack.lastIndex)) {
+        when (top) {
             Screen.Home -> HomeScreen(
                 data = data,
                 tab = tab,
@@ -93,8 +105,9 @@ fun App(onStartWorkout: (Complex) -> Unit) {
             is Screen.ExerciseEditor -> key(top) {
                 ExerciseEditorScreen(
                     existing = data.exercises.find { it.id == top.id },
-                    categories = data.categories,
+                    data = data,
                     onClose = { pop() },
+                    onEditEquipment = { push(Screen.EquipmentEditor(it)) },
                 )
             }
             is Screen.ComplexEditor -> key(top) {
@@ -104,7 +117,23 @@ fun App(onStartWorkout: (Complex) -> Unit) {
                     onClose = { pop() },
                 )
             }
-            Screen.Settings -> SettingsScreen(data, onBack = { pop() }, onReminders = { push(Screen.Reminders) })
+            Screen.Settings -> SettingsScreen(
+                data,
+                onBack = { pop() },
+                onReminders = { push(Screen.Reminders) },
+                onCategories = { push(Screen.Categories) },
+                onEquipment = { push(Screen.EquipmentList) },
+            )
+            Screen.Categories -> CategoriesScreen(data, onBack = { pop() })
+            Screen.EquipmentList -> EquipmentListScreen(data, onBack = { pop() }, onEdit = { push(Screen.EquipmentEditor(it)) })
+            is Screen.EquipmentEditor -> key(top) {
+                EquipmentEditorScreen(
+                    item = data.equipment.find { it.id == top.id },
+                    data = data,
+                    onBack = { pop() },
+                    onOpenExercise = { push(Screen.ExerciseEditor(it)) },
+                )
+            }
             Screen.Reminders -> RemindersScreen(
                 data = data,
                 onBack = { pop() },
@@ -121,6 +150,7 @@ fun App(onStartWorkout: (Complex) -> Unit) {
                 stack.removeAll { it == Screen.Workout }
                 if (stack.isEmpty()) stack.add(Screen.Home)
             })
+        }
         }
     }
 }

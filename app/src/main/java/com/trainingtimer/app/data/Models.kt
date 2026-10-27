@@ -15,7 +15,14 @@ data class Exercise(
     val categories: List<String> = emptyList(),
     /** Done with dumbbells, a kettlebell etc.: complexes get a weight field for it. */
     val usesWeight: Boolean = false,
+    /** Ids of the [Equipment] this exercise needs (dumbbells, a mat, a pull-up bar…). */
+    val equipment: List<String> = emptyList(),
 )
+
+/** A piece of equipment. [icon] is a key of [EquipmentIcons]. */
+data class Equipment(val id: String, val name: String, val icon: String)
+
+const val MAX_EQUIPMENT_NAME = 40
 
 /** [color] is "#RRGGBB". */
 data class Category(val id: String, val name: String, val color: String)
@@ -105,6 +112,7 @@ data class AppData(
     val settings: Settings = Settings(),
     val categories: List<Category> = emptyList(),
     val reminders: List<Reminder> = emptyList(),
+    val equipment: List<Equipment> = emptyList(),
 )
 
 /**

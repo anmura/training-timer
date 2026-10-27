@@ -130,4 +130,33 @@ object UiIcons {
     const val WEIGHT = "M9 9V7a3 3 0 0 1 6 0v2M7 9h10l1.5 10h-13z"
     const val TRASH = "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
     const val WARNING = "M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"
+    const val FILTER = "M4 6h16M7 12h10M10 18h4"
+    const val EDIT = "M4 20h4L19 9l-4-4L4 16zM14 6l4 4"
+    const val TAG = "M3 12V4h8l10 10-8 8zM7.5 8h.01"
+}
+
+/** Icons for equipment (24×24 outline paths). */
+object EquipmentIcons {
+    const val DEFAULT = "dumbbell"
+    val all: List<Pair<String, String>> = listOf(
+        "dumbbell" to "M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12",
+        "kettlebell" to "M9 9V7a3 3 0 0 1 6 0v2M7.5 10.5h9A6 6 0 1 1 7.5 10.5z",
+        "mat" to "M4 6h12a3 3 0 0 1 0 6H4zM16 12a3 3 0 0 1 0 6H4v-6",
+        "band" to "M4 12c0-3.3 3.6-6 8-6s8 2.7 8 6-3.6 6-8 6-8-2.7-8-6zM8 12c0-1.7 1.8-3 4-3s4 1.3 4 3-1.8 3-4 3-4-1.3-4-3z",
+        "bar" to "M3 5h18M6 5v15M18 5v15M10 5v3M14 5v3",
+        "bench" to "M3 10h18M6 10v8M18 10v8M9 10V7h6v3",
+        "wheel" to "M2 12h20M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z",
+        "rope" to "M5 3v7M19 3v7M5 10c0 9 14 9 14 0",
+        "barbell" to "M2 12h20M5 7v10M8 8.5v7M16 8.5v7M19 7v10",
+        "roller" to "M4 8h14a2 4 0 0 1 0 8H4a2 4 0 0 1 0-8zM4 8a2 4 0 0 0 0 8",
+        "box" to "M4 8l8-4 8 4v9l-8 4-8-4zM4 8l8 4 8-4M12 12v9",
+        "rings" to "M8 3v5M16 3v5M8 8a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM16 8a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z",
+        "parallel" to "M3 9h8M13 9h8M5 9v11M9 9v11M15 9v11M19 9v11",
+        "stick" to "M4 20L20 4M3 17l4 4M17 3l4 4",
+        "ball" to "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3.5 9h17M3.5 15h17",
+        "chair" to "M7 3v9h10M7 12v9M17 12v9M7 16h10",
+    )
+    private val byKey = all.toMap()
+    fun has(key: String): Boolean = byKey.containsKey(key)
+    fun path(key: String): String = byKey[key] ?: byKey.getValue(DEFAULT)
 }

@@ -19,7 +19,8 @@ data class ImportResult(
  * {
  *   "version": 1,
  *   "categories": [ { "name": "Растяжка", "color": "#C49BFF" } ],            (optional)
- *   "exercises": [ { "name": "Burpees", "icon": "jump", "categories": ["Силовые"] }, ... ],
+ *   "equipment": [ { "name": "Гантели", "icon": "dumbbell" } ],              (optional)
+ *   "exercises": [ { "name": "Burpees", "icon": "jump", "categories": ["Силовые"], "equipment": ["Коврик"] }, ... ],
  *   "complexes": [ { "name": "Morning HIIT", "rest": 15, "items": [
  *       { "exercise": "Burpees", "time": 30 },
  *       { "exercise": "Push-ups", "reps": 12 },                              (reps set: ends when the user taps Done)
@@ -84,6 +85,32 @@ object ImportExport {
             newCategories += c
             return c
         }
+        // Equipment: match by name, create what doesn't exist yet.
+        val eqByName = HashMap<String, Equipment>()
+        for (q in data.equipment) eqByName[q.name.trim().lowercase()] = q
+        val newEquipment = ArrayList<Equipment>()
+        fun equipmentFor(name: String, icon: String?): Equipment {
+            val key = name.trim().lowercase()
+            eqByName[key]?.let { return it }
+            val q = Equipment(newId(), name.trim().take(MAX_EQUIPMENT_NAME), icon?.takeIf { EquipmentIcons.has(it) } ?: EquipmentIcons.DEFAULT)
+            eqByName[key] = q
+            newEquipment += q
+            return q
+        }
+        if (root is JSONObject) {
+            val eqArr = root.optJSONArray("equipment")
+            if (eqArr != null) {
+                for (i in 0 until eqArr.length()) {
+                    when (val q = eqArr.opt(i)) {
+                        is String -> if (q.isNotBlank()) equipmentFor(q, null)
+                        is JSONObject -> {
+                            val n = stringOrEmpty(q, "name")
+                            if (n.isNotEmpty()) equipmentFor(n, stringOrEmpty(q, "icon").ifEmpty { null })
+                        }
+                    }
+                }
+            }
+        }
         if (root is JSONObject) {
             val caArr = root.optJSONArray("categories")
             if (caArr != null) {
@@ -107,12 +134,17 @@ object ImportExport {
                 var icon: String? = null
                 var catNames: List<String> = emptyList()
                 var usesWeight = false
+                var eqNames: List<String> = emptyList()
                 when (entry) {
                     is String -> name = entry.trim().take(MAX_EXERCISE_NAME).trim()
                     is JSONObject -> {
                         name = stringOrEmpty(entry, "name").take(MAX_EXERCISE_NAME).trim()
                         icon = stringOrEmpty(entry, "icon").lowercase().ifEmpty { null }
                         usesWeight = entry.optBoolean("usesWeight", false)
+                        val eqa = entry.optJSONArray("equipment")
+                        if (eqa != null) {
+                            eqNames = (0 until eqa.length()).mapNotNull { k -> (eqa.opt(k) as? String)?.trim()?.ifEmpty { null } }
+                        }
                         val ca = entry.optJSONArray("categories")
                         if (ca != null) {
                             catNames = (0 until ca.length()).mapNotNull { k -> (ca.opt(k) as? String)?.trim()?.ifEmpty { null } }
@@ -133,7 +165,8 @@ object ImportExport {
                     continue
                 }
                 val catIds = catNames.map { categoryFor(it, null).id }.distinct()
-                val ex = Exercise(newId(), name, if (icon != null && ExerciseIcons.has(icon)) icon else ExerciseIcons.UNKNOWN, catIds, usesWeight)
+                val eqIds = eqNames.map { equipmentFor(it, null).id }.distinct()
+                val ex = Exercise(newId(), name, if (icon != null && ExerciseIcons.has(icon)) icon else ExerciseIcons.UNKNOWN, catIds, usesWeight, eqIds)
                 byName[key] = ex
                 added += ex
             }
@@ -200,7 +233,7 @@ object ImportExport {
         }.filter { it.weight > 0 || it.perRound }.map { it.exerciseId }.toSet()
         for (k in added.indices) if (added[k].id in weighted) added[k] = added[k].copy(usesWeight = true)
 
-        Repo.addImported(added, addedComplexes, newCategories)
+        Repo.addImported(added, addedComplexes, newCategories, newEquipment)
         return ImportResult(
             addedExercises = added.map { it.name },
             skippedExercises = skipped,
@@ -269,7 +302,14 @@ object ImportExport {
     }
 
     fun exportExercises(d: AppData): String =
-        JSONObject().put("version", 1).put("categories", categoriesJson(d)).put("exercises", exercisesJson(d)).toString(2)
+        JSONObject().put("version", 1).put("categories", categoriesJson(d)).put("equipment", equipmentJson(d))
+            .put("exercises", exercisesJson(d)).toString(2)
+
+    private fun equipmentJson(d: AppData): JSONArray {
+        val arr = JSONArray()
+        for (q in d.equipment) arr.put(JSONObject().put("name", q.name).put("icon", q.icon))
+        return arr
+    }
 
     private fun categoriesJson(d: AppData): JSONArray {
         val arr = JSONArray()
@@ -282,10 +322,12 @@ object ImportExport {
         val used = selected.flatMap { it.exerciseIds() }.toSet()
         val exercises = d.exercises.filter { it.id in used }
         val catIds = exercises.flatMap { it.categories }.toSet()
+        val eqIds = exercises.flatMap { it.equipment }.toSet()
         val part = d.copy(
             exercises = exercises,
             complexes = selected,
             categories = d.categories.filter { it.id in catIds },
+            equipment = d.equipment.filter { it.id in eqIds },
         )
         return exportBackup(part)
     }
@@ -312,6 +354,7 @@ object ImportExport {
         return JSONObject()
             .put("version", 1)
             .put("categories", categoriesJson(d))
+            .put("equipment", equipmentJson(d))
             .put("exercises", exercisesJson(d))
             .put("complexes", complexes)
             .toString(2)
@@ -343,6 +386,12 @@ object ImportExport {
                 val ca = JSONArray()
                 for (n in names) ca.put(n)
                 o.put("categories", ca)
+            }
+            val eqNames = e.equipment.mapNotNull { id -> d.equipment.find { it.id == id }?.name }
+            if (eqNames.isNotEmpty()) {
+                val ea = JSONArray()
+                for (n in eqNames) ea.put(n)
+                o.put("equipment", ea)
             }
             arr.put(o)
         }

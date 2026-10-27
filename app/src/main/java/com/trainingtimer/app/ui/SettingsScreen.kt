@@ -36,7 +36,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.heightIn
 
 @Composable
-fun SettingsScreen(data: AppData, onBack: () -> Unit, onReminders: () -> Unit) {
+fun SettingsScreen(data: AppData, onBack: () -> Unit, onReminders: () -> Unit, onCategories: () -> Unit, onEquipment: () -> Unit) {
     val settings = data.settings
     val context = LocalContext.current
     val version = try {
@@ -56,6 +56,31 @@ fun SettingsScreen(data: AppData, onBack: () -> Unit, onReminders: () -> Unit) {
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            SectionLabel("Library")
+            LibraryEntry(
+                "Categories",
+                when (data.categories.size) {
+                    0 -> "Group exercises: create, rename, colours"
+                    1 -> "1 category · names and colours"
+                    else -> "${data.categories.size} categories · names and colours"
+                },
+                UiIcons.TAG,
+                C.Green,
+                C.GreenDim,
+                onCategories,
+            )
+            LibraryEntry(
+                "Equipment",
+                when (data.equipment.size) {
+                    0 -> "What exercises need: create, icons"
+                    1 -> "1 item · names and icons"
+                    else -> "${data.equipment.size} items · names and icons"
+                },
+                UiIcons.DUMBBELL,
+                C.Lime,
+                C.LimeDim,
+                onEquipment,
+            )
             SectionLabel("Reminders")
             RemindersEntry(data, onReminders)
             SectionLabel("Workout start")

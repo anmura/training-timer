@@ -427,15 +427,17 @@ private fun ExercisesTab(
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     var toDelete by remember { mutableStateOf<Exercise?>(null) }
     var manageCategories by remember { mutableStateOf(false) }
-    // A deleted category can't stay selected.
+    var eqFilter by rememberSaveable { mutableStateOf<String?>(null) }
+    // A deleted category or equipment can't stay selected.
     val activeFilter = filter?.takeIf { f -> f == NO_CATEGORY || data.categories.any { it.id == f } }
+    val activeEq = eqFilter?.takeIf { f -> data.equipment.any { it.id == f } }
     val searched = remember(data.exercises, query) {
         val q = query.trim()
         data.exercises
             .filter { q.isEmpty() || it.name.contains(q, ignoreCase = true) }
             .sortedBy { it.name.lowercase() }
     }
-    val list = searched.inCategory(activeFilter)
+    val list = searched.inCategory(activeFilter).withEquipment(activeEq)
     // "All" with categories: one group per category (an exercise can appear in several), then the uncategorised ones.
     val groups: List<Pair<Category?, List<Exercise>>> = if (activeFilter == null && data.categories.isNotEmpty()) {
         data.categories.map { c -> c to list.filter { c.id in it.categories } }.filter { it.second.isNotEmpty() } +
@@ -468,10 +470,17 @@ private fun ExercisesTab(
         item(key = "filters") {
             CategoryFilterRow(
                 categories = data.categories,
-                exercises = searched,
+                exercises = searched.withEquipment(activeEq),
                 selected = activeFilter,
                 onSelect = { filter = it },
                 onManage = { manageCategories = true },
+            )
+            Spacer(Modifier.height(8.dp))
+            EquipmentFilterRow(
+                equipment = data.equipment,
+                exercises = searched.inCategory(activeFilter),
+                selected = activeEq,
+                onSelect = { eqFilter = it },
             )
             Spacer(Modifier.height(6.dp))
         }
@@ -480,6 +489,7 @@ private fun ExercisesTab(
                 when {
                     data.exercises.isEmpty() -> EmptyState("No exercises yet", "Tap + to add one, or import them from a file.")
                     query.isNotBlank() -> EmptyState("Nothing found", "No exercise matches “${query.trim()}”.")
+                    activeEq != null -> EmptyState("Nothing here", "No exercises with this equipment in this category.")
                     else -> EmptyState("Nothing here", "No exercises in this category yet.")
                 }
             }
@@ -524,6 +534,7 @@ private fun ExercisesTab(
                         // In grouped view the group already says it; show the line only for extra categories or filtered views.
                         if (!grouped || e.categories.size > 1) CategoryLine(e, data.categories)
                     }
+                    EquipmentStrip(e, data.equipment, highlight = activeEq)
                     OverflowMenu(
                         "Exercise options",
                         listOf("Edit" to { onEdit(e.id) }, "Delete" to { toDelete = e }),
@@ -556,7 +567,7 @@ private fun ExercisesTab(
 }
 
 @Composable
-fun SearchField(value: String, onChange: (String) -> Unit, background: Color = C.Surface) {
+fun SearchField(value: String, onChange: (String) -> Unit, background: Color = C.Surface, hint: String = "Search exercises") {
     Row(
         Modifier
             .fillMaxWidth()
@@ -569,7 +580,7 @@ fun SearchField(value: String, onChange: (String) -> Unit, background: Color = C
         PathIcon(UiIcons.SEARCH, C.Muted, size = 20.dp)
         Spacer(Modifier.width(10.dp))
         Box(Modifier.weight(1f)) {
-            if (value.isEmpty()) Text("Search exercises", color = C.Muted, fontSize = 15.sp)
+            if (value.isEmpty()) Text(hint, color = C.Muted, fontSize = 15.sp)
             BasicTextField(
                 value = value,
                 onValueChange = onChange,

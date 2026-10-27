@@ -13,7 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import com.trainingtimer.app.data.Category
+import com.trainingtimer.app.data.AppData
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
@@ -122,13 +122,16 @@ private fun UsesWeightRow(on: Boolean, onChange: (Boolean) -> Unit) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClose: () -> Unit) {
+fun ExerciseEditorScreen(existing: Exercise?, data: AppData, onClose: () -> Unit, onEditEquipment: (String) -> Unit) {
+    val categories = data.categories
     val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf(existing?.name ?: "") }
     var icon by rememberSaveable { mutableStateOf(existing?.icon ?: "plank") }
-    var selectedCats by remember { mutableStateOf(existing?.categories ?: emptyList()) }
+    var selectedCats by rememberIdList(existing?.categories ?: emptyList())
+    var selectedEquipment by rememberIdList(existing?.equipment ?: emptyList())
     var usesWeight by rememberSaveable { mutableStateOf(existing?.usesWeight ?: false) }
-    var newCategory by remember { mutableStateOf(false) }
+    var pickCategories by remember { mutableStateOf(false) }
+    var pickEquipment by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -148,7 +151,16 @@ fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClos
             n.isEmpty() -> error = "Enter a name"
             Repo.nameExists(n, existing?.id) -> error = "An exercise with this name already exists"
             else -> {
-                Repo.saveExercise(Exercise(existing?.id ?: newId(), n, icon, selectedCats.filter { id -> categories.any { it.id == id } }, usesWeight))
+                Repo.saveExercise(
+                    Exercise(
+                        existing?.id ?: newId(),
+                        n,
+                        icon,
+                        selectedCats.filter { id -> categories.any { it.id == id } },
+                        usesWeight,
+                        selectedEquipment.filter { id -> data.equipment.any { it.id == id } },
+                    ),
+                )
                 onClose()
             }
         }
@@ -205,29 +217,19 @@ fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClos
                 ),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text("Categories", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = C.Muted)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (c in categories) {
-                    val on = c.id in selectedCats
-                    FilterChip(
-                        c.name,
-                        on,
-                        { selectedCats = if (on) selectedCats - c.id else selectedCats + c.id },
-                        color = categoryColor(c.color),
-                    )
+            // Only what is chosen is listed; "Add" opens the full list (with search and "New…").
+            val cats = selectedCats.mapNotNull { id -> categories.find { it.id == id } }
+            ChosenSection("Categories", cats.size, "Choose categories", { pickCategories = true }, "No category") {
+                for (c in cats) {
+                    ChosenRow(c.name, onClick = { pickCategories = true }, clickLabel = "Choose categories") { CategoryDotTile(c.color) }
                 }
-                Row(
-                    Modifier
-                        .height(36.dp)
-                        .clip(RoundedCornerShape(18.dp))
-                        .border(1.5.dp, C.LimeBorder, RoundedCornerShape(18.dp))
-                        .clickable(role = Role.Button) { newCategory = true }
-                        .padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PathIcon(UiIcons.PLUS, C.Lime, size = 16.dp, strokeWidth = 2.6f)
-                    Spacer(Modifier.width(6.dp))
-                    Text("New category", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = C.Lime)
+            }
+            val eq = selectedEquipment.mapNotNull { id -> data.equipment.find { it.id == id } }
+            ChosenSection("Equipment", eq.size, "Choose equipment", { pickEquipment = true }, "No equipment needed") {
+                for (q in eq) {
+                    ChosenRow(q.name, onClick = { onEditEquipment(q.id) }, clickLabel = "Edit equipment") {
+                        EquipmentIcon(q.icon, tileSize = 34.dp, iconSize = 20.dp)
+                    }
                 }
             }
             UsesWeightRow(usesWeight) { usesWeight = it }
@@ -299,18 +301,16 @@ fun ExerciseEditorScreen(existing: Exercise?, categories: List<Category>, onClos
             )
         }
     }
-    if (newCategory) {
-        CategoryNameDialog(
-            title = "New category",
-            initial = "",
-            confirmLabel = "Add",
-            exceptId = null,
-            onDismiss = { newCategory = false },
-            onConfirm = { name ->
-                val c = Repo.addCategory(name, Repo.nextCategoryColor())
-                selectedCats = selectedCats + c.id
-                newCategory = false
-            },
-        )
+    if (pickCategories) {
+        CategoryPickerSheet(data, selectedCats, onDismiss = { pickCategories = false }) {
+            selectedCats = it
+            pickCategories = false
+        }
+    }
+    if (pickEquipment) {
+        EquipmentPickerSheet(data, selectedEquipment, onDismiss = { pickEquipment = false }) {
+            selectedEquipment = it
+            pickEquipment = false
+        }
     }
 }

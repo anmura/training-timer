@@ -43,6 +43,9 @@ object C {
     val VioletBg = Color(0xFF221C2C)
     val VioletDim = Color(0xFF2A2238)
     val VioletBorder = Color(0xFF4A3A66)
+    /** Categories entry in Settings. */
+    val Green = Color(0xFF4ADE9B)
+    val GreenDim = Color(0xFF1F3A2E)
 }
 
 /** Condensed bold system font, used for big numbers and display titles. */

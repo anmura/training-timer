@@ -198,7 +198,9 @@ private fun SelectExercisesStep(
         val q = query.trim()
         if (q.isEmpty()) sorted else sorted.filter { it.name.contains(q, ignoreCase = true) }
     }
-    val shown = searched.inCategory(catFilter)
+    var eqFilter by remember { mutableStateOf<String?>(null) }
+    val equipment = Repo.state.value.equipment
+    val shown = searched.inCategory(catFilter).withEquipment(eqFilter)
     Column(
         Modifier
             .fillMaxSize()
@@ -209,7 +211,8 @@ private fun SelectExercisesStep(
         Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp)) {
             SearchField(query, onChange = { query = it })
         }
-        CategoryFilterRow(categories, searched, catFilter, { catFilter = it }, Modifier.padding(bottom = 8.dp))
+        CategoryFilterRow(categories, searched.withEquipment(eqFilter), catFilter, { catFilter = it }, Modifier.padding(bottom = 8.dp))
+        EquipmentFilterRow(equipment, searched.inCategory(catFilter), eqFilter, { eqFilter = it }, Modifier.padding(bottom = 8.dp))
         if (sorted.isEmpty()) {
             EmptyState("Your library is empty", "Add exercises on the Exercises tab first.", Modifier.weight(1f))
         } else if (shown.isEmpty()) {
@@ -702,7 +705,9 @@ private fun ExercisePickerSheet(
         val q = query.trim()
         if (q.isEmpty()) sorted else sorted.filter { it.name.contains(q, ignoreCase = true) }
     }
-    val shown = searched.inCategory(catFilter)
+    var eqFilter by remember { mutableStateOf<String?>(null) }
+    val equipment = Repo.state.value.equipment
+    val shown = searched.inCategory(catFilter).withEquipment(eqFilter)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = C.Surface) {
         Column(
             Modifier
@@ -713,7 +718,8 @@ private fun ExercisePickerSheet(
             Spacer(Modifier.height(12.dp))
             SearchField(query, onChange = { query = it }, background = C.Surface2)
             Spacer(Modifier.height(10.dp))
-            CategoryFilterRow(categories, searched, catFilter, { catFilter = it }, Modifier.padding(bottom = 10.dp), horizontalPadding = 0.dp)
+            CategoryFilterRow(categories, searched.withEquipment(eqFilter), catFilter, { catFilter = it }, Modifier.padding(bottom = 10.dp), horizontalPadding = 0.dp)
+            EquipmentFilterRow(equipment, searched.inCategory(catFilter), eqFilter, { eqFilter = it }, Modifier.padding(bottom = 8.dp), horizontalPadding = 0.dp)
             if (shown.isEmpty()) {
                 Text(
                     if (query.isNotBlank()) "No exercise matches “${query.trim()}”." else "No exercises in this category yet.",
@@ -763,7 +769,9 @@ private fun AddCycleSheet(
         val q = query.trim()
         if (q.isEmpty()) sorted else sorted.filter { it.name.contains(q, ignoreCase = true) }
     }
-    val shown = searched.inCategory(catFilter)
+    var eqFilter by remember { mutableStateOf<String?>(null) }
+    val equipment = Repo.state.value.equipment
+    val shown = searched.inCategory(catFilter).withEquipment(eqFilter)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = C.Surface) {
         Column(
             Modifier
@@ -800,7 +808,8 @@ private fun AddCycleSheet(
             SectionLabel("Exercises in cycle", Modifier.padding(top = 8.dp, bottom = 6.dp), trailing = "Time per round")
             SearchField(query, onChange = { query = it }, background = C.Surface2)
             Spacer(Modifier.height(10.dp))
-            CategoryFilterRow(categories, searched, catFilter, { catFilter = it }, Modifier.padding(bottom = 8.dp), horizontalPadding = 0.dp)
+            CategoryFilterRow(categories, searched.withEquipment(eqFilter), catFilter, { catFilter = it }, Modifier.padding(bottom = 8.dp), horizontalPadding = 0.dp)
+            EquipmentFilterRow(equipment, searched.inCategory(catFilter), eqFilter, { eqFilter = it }, Modifier.padding(bottom = 8.dp), horizontalPadding = 0.dp)
             if (shown.isEmpty()) {
                 Text(
                     if (query.isNotBlank()) "No exercise matches “${query.trim()}”." else "No exercises in this category yet.",

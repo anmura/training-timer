@@ -46,6 +46,7 @@ object Repo {
         installAssetProgram("program_stretch2_v1", "program_stretch2.json")
         installAssetProgram("program_basics_v1", "program_basics.json")
         installAssetProgram("program_pullups_v1", "program_pullups.json")
+        installEquipment()
     }
 
     /**
@@ -193,6 +194,63 @@ object Repo {
         prefs.edit().putBoolean(flag, true).apply()
     }
 
+    // ---------- equipment ----------
+
+    /**
+     * Once per install: a starter set of equipment, attached to known exercises by words in their names.
+     */
+    private fun installEquipment() {
+        val prefs = context.getSharedPreferences("app", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("equipment_v1", false)) return
+        if (_state.value.equipment.isEmpty()) {
+            val list = listOf(
+                Triple("Гантели", "dumbbell", listOf("гантел")),
+                Triple("Гиря", "kettlebell", listOf("гир")),
+                Triple("Коврик", "mat", emptyList()),
+                Triple("Резинка", "band", listOf("резин")),
+                Triple("Турник", "bar", listOf("подтяг", "турник", "переклад", "вис ")),
+                Triple("Брусья", "parallel", listOf("брусь")),
+                Triple("Скамья", "bench", listOf("скамь")),
+                Triple("Гриф", "stick", listOf("гриф")),
+                Triple("Ролик для пресса", "wheel", listOf("ролик")),
+                Triple("Скакалка", "rope", listOf("скакалк")),
+            ).map { (name, icon, words) -> Equipment(newId(), name, icon) to words }
+            update { d ->
+                d.copy(
+                    equipment = list.map { it.first },
+                    exercises = d.exercises.map { e ->
+                        val n = e.name.lowercase() + " "
+                        val ids = list.filter { (_, words) -> words.any { n.contains(it) } }.map { it.first.id }
+                        if (ids.isEmpty()) e else e.copy(equipment = (e.equipment + ids).distinct())
+                    },
+                )
+            }
+        }
+        prefs.edit().putBoolean("equipment_v1", true).apply()
+    }
+
+    fun equipmentNameExists(name: String, exceptId: String?): Boolean {
+        val n = name.trim().lowercase()
+        return _state.value.equipment.any { it.id != exceptId && it.name.trim().lowercase() == n }
+    }
+
+    fun addEquipment(name: String, icon: String): Equipment {
+        val e = Equipment(newId(), name.trim(), icon)
+        update { it.copy(equipment = it.equipment + e) }
+        return e
+    }
+
+    fun saveEquipment(item: Equipment) = update { d ->
+        d.copy(equipment = d.equipment.map { if (it.id == item.id) item.copy(name = item.name.trim()) else it })
+    }
+
+    fun deleteEquipment(id: String) = update { d ->
+        d.copy(
+            equipment = d.equipment.filter { it.id != id },
+            exercises = d.exercises.map { e -> if (id in e.equipment) e.copy(equipment = e.equipment - id) else e },
+        )
+    }
+
     // ---------- exercises ----------
 
     fun saveExercise(exercise: Exercise) = update { d ->
@@ -307,13 +365,19 @@ object Repo {
 
     fun updateSettings(settings: Settings) = update { it.copy(settings = settings) }
 
-    fun addImported(exercises: List<Exercise>, complexes: List<Complex>, categories: List<Category> = emptyList()) {
-        if (exercises.isEmpty() && complexes.isEmpty() && categories.isEmpty()) return
+    fun addImported(
+        exercises: List<Exercise>,
+        complexes: List<Complex>,
+        categories: List<Category> = emptyList(),
+        equipment: List<Equipment> = emptyList(),
+    ) {
+        if (exercises.isEmpty() && complexes.isEmpty() && categories.isEmpty() && equipment.isEmpty()) return
         update {
             it.copy(
                 exercises = it.exercises + exercises,
                 complexes = it.complexes + complexes,
                 categories = it.categories + categories,
+                equipment = it.equipment + equipment,
             )
         }
     }
@@ -350,8 +414,12 @@ object Codec {
         for (e in d.exercises) {
             val cats = JSONArray()
             for (id in e.categories) cats.put(id)
-            exercises.put(JSONObject().put("id", e.id).put("name", e.name).put("icon", e.icon).put("cats", cats).put("weight", e.usesWeight))
+            val eq = JSONArray()
+            for (id in e.equipment) eq.put(id)
+            exercises.put(JSONObject().put("id", e.id).put("name", e.name).put("icon", e.icon).put("cats", cats).put("weight", e.usesWeight).put("eq", eq))
         }
+        val equipment = JSONArray()
+        for (q in d.equipment) equipment.put(JSONObject().put("id", q.id).put("name", q.name).put("icon", q.icon))
         val categories = JSONArray()
         for (c in d.categories) {
             categories.put(JSONObject().put("id", c.id).put("name", c.name).put("color", c.color))
@@ -386,6 +454,7 @@ object Codec {
             .put("settings", settings)
             .put("categories", categories)
             .put("reminders", remindersToJson(d.reminders))
+            .put("equipment", equipment)
     }
 
     private fun remindersToJson(list: List<Reminder>): JSONArray {
@@ -461,7 +530,10 @@ object Codec {
                 val catArr = e.optJSONArray("cats")
                 val cats = ArrayList<String>()
                 if (catArr != null) for (k in 0 until catArr.length()) cats += catArr.getString(k)
-                exercises += Exercise(e.getString("id"), e.getString("name"), e.optString("icon", ExerciseIcons.DEFAULT), cats, e.optBoolean("weight", false))
+                val eqArr = e.optJSONArray("eq")
+                val eq = ArrayList<String>()
+                if (eqArr != null) for (k in 0 until eqArr.length()) eq += eqArr.getString(k)
+                exercises += Exercise(e.getString("id"), e.getString("name"), e.optString("icon", ExerciseIcons.DEFAULT), cats, e.optBoolean("weight", false), eq)
             }
         }
         val complexes = ArrayList<Complex>()
@@ -504,8 +576,19 @@ object Codec {
                 categories += Category(c.getString("id"), c.getString("name"), c.optString("color", "#4ADE9B"))
             }
         }
+        val equipment = ArrayList<Equipment>()
+        val eqArr = o.optJSONArray("equipment")
+        if (eqArr != null) {
+            for (i in 0 until eqArr.length()) {
+                val q = eqArr.getJSONObject(i)
+                equipment += Equipment(q.getString("id"), q.getString("name"), q.optString("icon", EquipmentIcons.DEFAULT))
+            }
+        }
         val known = categories.map { it.id }.toSet()
-        val cleaned = exercises.map { e -> e.copy(categories = e.categories.filter { it in known }) }
-        return AppData(cleaned, complexes, settings, categories, remindersFromJson(o.optJSONArray("reminders")))
+        val knownEq = equipment.map { it.id }.toSet()
+        val cleaned = exercises.map { e ->
+            e.copy(categories = e.categories.filter { it in known }, equipment = e.equipment.filter { it in knownEq })
+        }
+        return AppData(cleaned, complexes, settings, categories, remindersFromJson(o.optJSONArray("reminders")), equipment)
     }
 }
