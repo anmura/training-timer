@@ -67,6 +67,8 @@ data class WorkoutState(
     val actualSeconds: Int = 0,
     /** Full length of the current timed phase including time added with +10 s; drives the ring. */
     val phaseTotalMs: Long = 0,
+    /** Goes up by one at every breathing reminder; the screen shows the icon when it changes. */
+    val breathCue: Int = 0,
 ) {
     /** Reps sets after the current phase; their time is unknown, so "time left" can't include them. */
     val repsSetsAhead: Int get() = phases.drop(index + 1).count { it.isReps }
@@ -115,6 +117,9 @@ object WorkoutEngine {
     private var pausedTotal = 0L
     private var lastBeepSecond = -1
     private var tone: ToneGenerator? = null
+    /** Exercise time since the last breathing reminder. */
+    private var breathAcc = 0L
+    private var lastTickAt = 0L
 
     fun start(context: Context, complex: Complex, exercises: List<Exercise>) {
         val built = buildPhases(complex, exercises)
@@ -147,6 +152,8 @@ object WorkoutEngine {
         workoutStartedAt = now()
         pausedTotal = 0L
         lastBeepSecond = -1
+        breathAcc = 0L
+        lastTickAt = now()
         signalPhaseStart(first)
         startTicking()
         ContextCompat.startForegroundService(ctx, Intent(ctx, WorkoutService::class.java))
@@ -222,8 +229,12 @@ object WorkoutEngine {
     }
 
     private fun tick() {
-        val s = _state.value ?: return
-        if (s.paused || s.finished) return
+        val t = now()
+        val dt = (t - lastTickAt).coerceIn(0L, 1000L)
+        lastTickAt = t
+        val s0 = _state.value ?: return
+        if (s0.paused || s0.finished) return
+        val s = breathCheck(s0, dt)
         if (s.phase.isReps) {
             // No countdown: wait for Done, just keep the stopwatch going.
             _state.value = s.copy(elapsedMs = now() - startedAt)
@@ -240,6 +251,28 @@ object WorkoutEngine {
             countdownBeep()
         }
         _state.value = s.copy(remainingMs = rem)
+    }
+
+    /**
+     * Counts exercise time (not rest) and gives a breathing reminder every N seconds.
+     * Not in the first 2 s of a set or during the last-3-seconds countdown: then it waits a moment.
+     */
+    private fun breathCheck(s: WorkoutState, dt: Long): WorkoutState {
+        val settings = Repo.state.value.settings
+        if (!settings.breathReminders || s.phase.type != PhaseType.WORK) return s
+        breathAcc += dt
+        if (breathAcc < settings.breathEvery * 1000L) return s
+        val inSet = now() - startedAt
+        val left = if (s.phase.isReps) Long.MAX_VALUE else endAt - now()
+        if (inSet < 2000 || left < 4000) return s
+        breathAcc = 0L
+        if (settings.beeps) {
+            scope.launch {
+                toneGenerator()?.startTone(ToneGenerator.TONE_PROP_PROMPT, 140)
+            }
+        }
+        if (settings.vibration) vibrate(longArrayOf(0, 60, 90, 60))
+        return s.copy(breathCue = s.breathCue + 1)
     }
 
     private fun goTo(index: Int) {

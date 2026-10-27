@@ -104,7 +104,14 @@ data class Settings(
     val countdown: Int = 5,
     /** "kg" or "lb". */
     val weightUnit: String = "kg",
+    /** During exercises, remind to breathe: an icon pops up with a soft sound and buzz. */
+    val breathReminders: Boolean = false,
+    /** How often, in seconds of exercise time. */
+    val breathEvery: Int = 30,
 )
+
+const val BREATH_MIN = 10
+const val BREATH_MAX = 180
 
 data class AppData(
     val exercises: List<Exercise> = emptyList(),

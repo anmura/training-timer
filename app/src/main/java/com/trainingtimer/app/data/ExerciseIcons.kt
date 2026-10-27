@@ -139,6 +139,7 @@ object UiIcons {
     const val WEIGHT = "M9 9V7a3 3 0 0 1 6 0v2M7 9h10l1.5 10h-13z"
     const val TRASH = "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"
     const val WARNING = "M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"
+    const val BREATH = "M3 8h9.5a2.5 2.5 0 1 0-2.5-2.5M3 12h15.5a2.5 2.5 0 1 1-2.5 2.5M3 16h8"
     const val FILTER = "M4 6h16M7 12h10M10 18h4"
     const val EDIT = "M4 20h4L19 9l-4-4L4 16zM14 6l4 4"
     const val TAG = "M3 12V4h8l10 10-8 8zM7.5 8h.01"

@@ -508,6 +508,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
         NextCard(s)
     }
     EdgeGlow(glow)
+    BreathCue(s.breathCue)
     FullNameCard(p, visible = nameOpen, onClose = { nameOpen = false })
     }
 }
@@ -1001,5 +1002,44 @@ private fun EdgeGlow(on: Boolean) {
             topLeft = Offset(size.width - w, 0f),
             size = Size(w, size.height),
         )
+    }
+}
+
+/** "Breathe" reminder: pops up under the progress line and goes away by itself. */
+@Composable
+private fun BreathCue(cue: Int) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(cue) {
+        if (cue > 0) {
+            visible = true
+            delay(2200)
+            visible = false
+        }
+    }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 96.dp),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        androidx.compose.animation.AnimatedVisibility(
+            visible,
+            enter = fadeIn(tween(200)) + scaleIn(tween(260), initialScale = 0.6f),
+            exit = fadeOut(tween(500)),
+        ) {
+            Row(
+                Modifier
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(C.SkyTrack)
+                    .border(1.5.dp, C.Sky, RoundedCornerShape(24.dp))
+                    .padding(start = 14.dp, end = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PathIcon(UiIcons.BREATH, C.Sky, size = 26.dp, strokeWidth = 2.2f)
+                Spacer(Modifier.width(10.dp))
+                Text("Breathe", fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = C.Sky)
+            }
+        }
     }
 }

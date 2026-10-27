@@ -490,6 +490,7 @@ object Codec {
         }
         val settings = JSONObject().put("beeps", d.settings.beeps).put("vibration", d.settings.vibration).put("countdown", d.settings.countdown)
             .put("unit", d.settings.weightUnit)
+            .put("breath", d.settings.breathReminders).put("breathEvery", d.settings.breathEvery)
         return JSONObject()
             .put("version", 1)
             .put("exercises", exercises)
@@ -610,6 +611,8 @@ object Codec {
             s.optBoolean("vibration", true),
             s.optInt("countdown", 5).coerceIn(0, 15),
             if (s.optString("unit") == "lb") "lb" else "kg",
+            s.optBoolean("breath", false),
+            s.optInt("breathEvery", 30).coerceIn(BREATH_MIN, BREATH_MAX),
         ) else Settings()
         val categories = ArrayList<Category>()
         val caArr = o.optJSONArray("categories")

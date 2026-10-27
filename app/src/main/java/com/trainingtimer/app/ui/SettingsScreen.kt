@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.trainingtimer.app.data.Repo
+import com.trainingtimer.app.data.BREATH_MAX
+import com.trainingtimer.app.data.BREATH_MIN
 import com.trainingtimer.app.data.AppData
 import com.trainingtimer.app.data.UiIcons
 import com.trainingtimer.app.data.title
@@ -145,6 +147,38 @@ fun SettingsScreen(data: AppData, onBack: () -> Unit, onReminders: () -> Unit, o
                 checked = settings.vibration,
                 onChange = { Repo.updateSettings(settings.copy(vibration = it)) },
             )
+            SwitchRow(
+                title = "Breathing reminders",
+                description = "During exercises an icon pops up with a soft sound and buzz: don't forget to breathe",
+                checked = settings.breathReminders,
+                onChange = { Repo.updateSettings(settings.copy(breathReminders = it)) },
+            )
+            if (settings.breathReminders) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(C.Surface)
+                        .padding(start = 16.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Remind every", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
+                        Text("Counted in exercise time; rests don't count", fontSize = 13.sp, color = C.Muted)
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    val every = settings.breathEvery
+                    Stepper(
+                        text = "$every s",
+                        onMinus = { Repo.updateSettings(settings.copy(breathEvery = (every - if (every > 60) 10 else 5).coerceAtLeast(BREATH_MIN))) },
+                        onPlus = { Repo.updateSettings(settings.copy(breathEvery = (every + if (every >= 60) 10 else 5).coerceAtMost(BREATH_MAX))) },
+                        textColor = C.Sky,
+                        minTextWidth = 56.dp,
+                        minusLabel = "Shorter interval",
+                        plusLabel = "Longer interval",
+                    )
+                }
+            }
             Text(
                 "Beeps follow your phone's media volume.",
                 fontSize = 13.sp,
