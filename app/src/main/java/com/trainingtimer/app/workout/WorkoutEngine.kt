@@ -117,6 +117,9 @@ object WorkoutEngine {
     private var pausedTotal = 0L
     private var lastBeepSecond = -1
     private var tone: ToneGenerator? = null
+    /** The breathing cue: a soft inhale–exhale "whoosh" with a gentle rising and falling tone. */
+    private var sounds: android.media.SoundPool? = null
+    private var breathSound = 0
     /** Exercise time since the last breathing reminder. */
     private var breathAcc = 0L
     private var lastTickAt = 0L
@@ -133,6 +136,7 @@ object WorkoutEngine {
         }
         val ctx = context.applicationContext
         appContext = ctx
+        loadSounds(ctx)
         stopTicking()
         val first = phases[0]
         _state.value = WorkoutState(
@@ -268,11 +272,12 @@ object WorkoutEngine {
         if (inSet < 2000 || left < 4000) return s
         breathAcc = 0L
         if (settings.beeps) {
-            scope.launch {
-                toneGenerator()?.startTone(ToneGenerator.TONE_PROP_PROMPT, 140)
-            }
+            val pool = sounds
+            if (pool != null && breathSound != 0) pool.play(breathSound, 1f, 1f, 1, 0, 1f)
+            else toneGenerator()?.startTone(ToneGenerator.TONE_PROP_PROMPT, 140)
         }
-        if (settings.vibration) vibrate(longArrayOf(0, 60, 90, 60))
+        // A slow swell and fade, like a breath, instead of a sharp buzz.
+        if (settings.vibration) vibrateBreath()
         return s.copy(breathCue = s.breathCue + 1)
     }
 
@@ -330,6 +335,48 @@ object WorkoutEngine {
         }
         if (settings.vibration) {
             vibrate(if (p.type == PhaseType.WORK) longArrayOf(0, 350) else longArrayOf(0, 150, 120, 150))
+        }
+    }
+
+    private fun loadSounds(ctx: Context) {
+        if (sounds != null) return
+        val pool = android.media.SoundPool.Builder()
+            .setMaxStreams(2)
+            .setAudioAttributes(
+                android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build(),
+            )
+            .build()
+        breathSound = try {
+            pool.load(ctx, com.trainingtimer.app.R.raw.breath, 1)
+        } catch (e: Exception) {
+            0
+        }
+        sounds = pool
+    }
+
+    private fun vibrateBreath() {
+        val ctx = appContext ?: return
+        try {
+            val v = vibrator(ctx) ?: return
+            if (v.hasAmplitudeControl()) {
+                // Rise over ~0.9 s, short hold, fall over ~1.2 s.
+                val timings = LongArray(20) { 105L }
+                val amps = IntArray(20) { i ->
+                    when {
+                        i < 9 -> 20 + i * 12
+                        i < 10 -> 120
+                        else -> (120 - (i - 9) * 11).coerceAtLeast(10)
+                    }
+                }
+                v.vibrate(VibrationEffect.createWaveform(timings, amps, -1))
+            } else {
+                v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 60, 90, 60), -1))
+            }
+        } catch (e: Exception) {
+            // Vibration is a nice-to-have.
         }
     }
 
