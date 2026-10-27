@@ -361,6 +361,14 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
     // "Round 2 of 3" shows inside the timer and the round badge flashes.
     val sweep = remember(s.index) { Animatable(if (p.roundStart) 0f else 1f) }
     var announcing by remember(s.index) { mutableStateOf(p.roundStart) }
+    // The edge glow is a short flash at the start of the round, shorter than the rest of the announcement.
+    var glow by remember(s.index) { mutableStateOf(p.roundStart) }
+    LaunchedEffect(s.index) {
+        if (p.roundStart) {
+            delay(450)
+            glow = false
+        }
+    }
     LaunchedEffect(s.index) {
         if (p.roundStart) {
             sweep.animateTo(1f, tween(1100, easing = FastOutSlowInEasing))
@@ -498,7 +506,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
         }
         NextCard(s)
     }
-    EdgeGlow(announcing)
+    EdgeGlow(glow)
     FullNameCard(p, visible = nameOpen, onClose = { nameOpen = false })
     }
 }
@@ -974,7 +982,7 @@ private fun Stat(value: String, label: String) {
 /** Variant F glow: the screen edges light up in lime while a new round is announced. */
 @Composable
 private fun EdgeGlow(on: Boolean) {
-    val a by animateFloatAsState(if (on) 1f else 0f, tween(if (on) 300 else 900), label = "edgeGlow")
+    val a by animateFloatAsState(if (on) 1f else 0f, tween(if (on) 200 else 450), label = "edgeGlow")
     if (a <= 0f) return
     Canvas(Modifier.fillMaxSize()) {
         val w = 64.dp.toPx()
