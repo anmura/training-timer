@@ -16,6 +16,10 @@ No account, no ads, no internet connection. All data stays on the phone.
 - Exercises with a name (up to 60 characters) and an icon: 75+ built-in line icons in one style
 - Categories with colours; an exercise can belong to several categories or to none
 - Filter chips and a grouped list by category, plus search
+- **Equipment** (dumbbells, mat, pull-up bar…) with its own icons: an exercise shows only the equipment and categories it has, as a short list; **Add** opens the full list with search and *New equipment* / *New category*
+- Tap equipment in an exercise to edit it: name, icon and every exercise that uses it
+- Filter the library (and the exercise pickers in the complex editor) by equipment as well as by category; each exercise shows small icons of its equipment
+- Settings › Library: manage categories (name, colour, order) and equipment (name, icon)
 - Ready-made exercises for mobility, strength, stretching and wrists, plus 12 pull-up variations
 - An exercise can be marked **Uses weight** (dumbbells, kettlebell, barbell)
 
@@ -181,7 +185,7 @@ The built-in programs live in [`app/src/main/assets`](app/src/main/assets) and u
 - `rest` and `time` are in seconds. A cycle's `rest` is optional; without it the complex's rest is used.
 - Use `reps` instead of `time` for a set counted in repetitions; it ends when you tap Done.
 - `weight` (a number, in the app's unit) sets the weight of a set; in a cycle `weights` gives one per round, e.g. `[10, 12, 14]`. Exercises can have `"usesWeight": true`.
-- Categories are matched by name and created if they don't exist.
+- Categories and equipment are matched by name and created if they don't exist. Exercises can have `"equipment": ["Гантели"]`; a top-level `"equipment": [{ "name": "Гантели", "icon": "dumbbell" }]` sets icons.
 - An unknown or missing `icon` becomes the "?" icon.
 - Exercises and complexes whose names already exist are skipped.
 - Reminders are not part of export files: they belong to the phone they were set on.
