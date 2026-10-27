@@ -117,7 +117,7 @@ object WorkoutEngine {
     private var pausedTotal = 0L
     private var lastBeepSecond = -1
     private var tone: ToneGenerator? = null
-    /** The breathing cue: a soft inhale–exhale "whoosh" with a gentle rising and falling tone. */
+    /** The breathing cue: a warm low "wave" that rolls in and out, with a quiet hum. */
     private var sounds: android.media.SoundPool? = null
     private var breathSound = 0
     /** Exercise time since the last breathing reminder. */
