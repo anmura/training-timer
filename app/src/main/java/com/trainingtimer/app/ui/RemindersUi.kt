@@ -70,6 +70,10 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.trainingtimer.app.data.AppData
 import com.trainingtimer.app.data.DEFAULT_REMINDER_MESSAGE
 import com.trainingtimer.app.data.Reminder
+import com.trainingtimer.app.data.windowLabel
+import com.trainingtimer.app.data.minuteLabel
+import com.trainingtimer.app.data.intervalLabel
+import com.trainingtimer.app.data.isRepeat
 import com.trainingtimer.app.data.Repo
 import com.trainingtimer.app.data.UiIcons
 import com.trainingtimer.app.data.daysLabel
@@ -180,7 +184,12 @@ private fun ReminderCard(r: Reminder, title: String, isWorkout: Boolean, onClick
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
                 Text(r.timeLabel(), fontFamily = Condensed, fontSize = 44.sp, color = C.Text.copy(alpha = alpha))
-                Text(r.daysLabel(), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = C.Muted.copy(alpha = alpha))
+                Text(
+                    if (r.isRepeat) "${r.windowLabel()} · ${r.daysLabel()}" else r.daysLabel(),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = C.Muted.copy(alpha = alpha),
+                )
             }
             Switch(
                 checked = r.enabled,
@@ -280,6 +289,12 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
     var message by rememberSaveable { mutableStateOf(start.message) }
     var timeDialog by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var repeat by rememberSaveable { mutableStateOf(start.isRepeat) }
+    var every by rememberSaveable { mutableIntStateOf(if (start.isRepeat) start.repeatMinutes else 120) }
+    var from by rememberSaveable { mutableIntStateOf(start.fromMinute) }
+    var until by rememberSaveable { mutableIntStateOf(start.untilMinute) }
+    // Which time the picker edits: 0 = reminder time, 1 = from, 2 = until.
+    var timeTarget by remember { mutableIntStateOf(0) }
 
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val pickSound = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -301,9 +316,19 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
         complexId = if (what == What.WORKOUT) complexId else null,
         message = if (what == What.NUDGE) message.trim() else "",
         enabled = true,
+        repeatMinutes = if (repeat) every else 0,
+        fromMinute = from,
+        untilMinute = until,
+        // Saving (re)starts the step: it counts from now.
+        anchor = System.currentTimeMillis(),
+        awaitingWorkout = false,
     )
 
     fun save() {
+        if (repeat && until <= from) {
+            Toast.makeText(context, "“Until” has to be later than “From”", Toast.LENGTH_SHORT).show()
+            return
+        }
         if (what == What.WORKOUT && complexId == null) {
             Toast.makeText(context, "Choose a workout or switch to “Just a nudge”", Toast.LENGTH_SHORT).show()
             return
@@ -323,6 +348,7 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
 
     val preview = build()
     val whenText = when {
+        repeat -> "${intervalLabel(every)}, ${preview.windowLabel()}, ${preview.daysLabel().lowercase()}"
         days.isEmpty() -> ReminderScheduler.nextTrigger(preview)?.let { "Once · " + ReminderScheduler.whenLabel(it) } ?: "Once"
         else -> preview.daysLabel().let { if (it == "Every day" || it == "Weekdays" || it == "Weekends") it else "Every $it" }
     }
@@ -349,19 +375,107 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
                 .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(22.dp),
         ) {
-            // Time
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    "%02d:%02d".format(hour, minute),
-                    fontFamily = Condensed,
-                    fontSize = 88.sp,
-                    color = C.Text,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable(role = Role.Button, onClickLabel = "Change time") { timeDialog = true }
-                        .padding(horizontal = 12.dp),
-                )
-                Text(whenText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = C.Muted)
+            // Mode: once at a time, or every X between two times.
+            ModeToggle(repeat) { repeat = it }
+            if (!repeat) {
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "%02d:%02d".format(hour, minute),
+                        fontFamily = Condensed,
+                        fontSize = 88.sp,
+                        color = C.Text,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable(role = Role.Button, onClickLabel = "Change time") {
+                            timeTarget = 0
+                            timeDialog = true
+                        }
+                            .padding(horizontal = 12.dp),
+                    )
+                    Text(whenText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = C.Muted)
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SectionLabel("Every")
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(C.Surface)
+                            .padding(start = 16.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Interval", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
+                            Text("Counted from when you switch it on", fontSize = 13.sp, color = C.Muted)
+                        }
+                        Stepper(
+                            text = intervalLabel(every).removePrefix("Every "),
+                            onMinus = { every = REPEAT_STEPS.lastOrNull { it < every } ?: every },
+                            onPlus = { every = REPEAT_STEPS.firstOrNull { it > every } ?: every },
+                            textColor = C.Lime,
+                            minTextWidth = 72.dp,
+                            minusLabel = "More often",
+                            plusLabel = "Less often",
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        for (m in listOf(30, 60, 90, 120, 180)) {
+                            val on = every == m
+                            Box(
+                                Modifier
+                                    .height(34.dp)
+                                    .clip(RoundedCornerShape(17.dp))
+                                    .background(if (on) C.LimeDim else C.Surface)
+                                    .border(1.5.dp, if (on) C.Lime else C.Line, RoundedCornerShape(17.dp))
+                                    .selectable(selected = on, role = Role.RadioButton) { every = m }
+                                    .padding(horizontal = 12.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(intervalLabel(m).removePrefix("Every "), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = if (on) C.Lime else C.Text)
+                            }
+                        }
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SectionLabel("Between")
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TimeTile("From", from, Modifier.weight(1f)) {
+                            timeTarget = 1
+                            timeDialog = true
+                        }
+                        Text("–", fontSize = 22.sp, color = C.Faint)
+                        TimeTile("Until", until, Modifier.weight(1f)) {
+                            timeTarget = 2
+                            timeDialog = true
+                        }
+                    }
+                    val today = remember(every, from, until, days) { ReminderScheduler.todayTimes(preview) }
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(C.CycleBg)
+                            .border(1.5.dp, C.LimeDim, RoundedCornerShape(18.dp))
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text("TODAY", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = C.Lime)
+                        Text(
+                            if (today.isEmpty()) "No more reminders today" else today.joinToString("  ·  ") { "%02d:%02d".format(it.hour, it.minute) },
+                            fontFamily = Condensed,
+                            fontSize = 20.sp,
+                            color = C.Text,
+                        )
+                        Text(
+                            "Counted from now. Nothing at or after ${minuteLabel(until)}. Next days start at ${minuteLabel(from)}. " +
+                                "After a workout started from this reminder (or a snooze), the step starts again when it ends.",
+                            fontSize = 12.sp,
+                            color = C.Muted,
+                            lineHeight = 17.sp,
+                        )
+                    }
+                }
             }
 
             // Repeat
@@ -390,7 +504,7 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PresetChip("Every day") { days = (1..7).toList() }
                     PresetChip("Weekdays") { days = (1..5).toList() }
-                    PresetChip("Once") { days = emptyList() }
+                    if (!repeat) PresetChip("Once") { days = emptyList() }
                 }
             }
 
@@ -553,18 +667,29 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
     }
 
     if (timeDialog) {
-        val state = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
+        val initial = when (timeTarget) {
+            1 -> from
+            2 -> until % (24 * 60)
+            else -> hour * 60 + minute
+        }
+        val state = rememberTimePickerState(initialHour = initial / 60, initialMinute = initial % 60, is24Hour = true)
         Dialog(onDismissRequest = { timeDialog = false }) {
             Surface(shape = RoundedCornerShape(28.dp), color = C.Surface) {
                 Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Reminder time", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = C.Text, modifier = Modifier.align(Alignment.Start))
+                    Text(when (timeTarget) { 1 -> "From"; 2 -> "Until"; else -> "Reminder time" }, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = C.Text, modifier = Modifier.align(Alignment.Start))
                     Spacer(Modifier.height(16.dp))
                     TimePicker(state = state)
                     Row(Modifier.align(Alignment.End)) {
                         TextButton(onClick = { timeDialog = false }) { Text("Cancel", color = C.Text) }
                         TextButton(onClick = {
-                            hour = state.hour
-                            minute = state.minute
+                            when (timeTarget) {
+                                1 -> from = state.hour * 60 + state.minute
+                                2 -> until = (state.hour * 60 + state.minute).let { if (it == 0) 24 * 60 else it }
+                                else -> {
+                                    hour = state.hour
+                                    minute = state.minute
+                                }
+                            }
                             timeDialog = false
                         }) { Text("OK", color = C.Lime) }
                     }
@@ -682,5 +807,51 @@ private fun soundName(context: Context, sound: String?): String {
         RingtoneManager.getRingtone(context, Uri.parse(sound))?.getTitle(context) ?: "Custom"
     } catch (e: Exception) {
         "Custom"
+    }
+}
+
+/** Interval choices for repeating reminders, in minutes. */
+private val REPEAT_STEPS = listOf(15, 20, 30, 45, 60, 90, 120, 150, 180, 240, 300, 360)
+
+@Composable
+private fun ModeToggle(repeat: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .background(C.Surface)
+            .padding(4.dp),
+    ) {
+        for ((label, icon, isRepeat) in listOf(Triple("At a time", UiIcons.ALARM, false), Triple("Repeat", UiIcons.REPEAT, true))) {
+            val on = repeat == isRepeat
+            Row(
+                Modifier
+                    .weight(1f)
+                    .height(42.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(if (on) C.Lime else Color.Transparent)
+                    .selectable(selected = on, role = Role.Tab) { onChange(isRepeat) },
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PathIcon(icon, if (on) C.OnLime else C.Muted, size = 16.dp, strokeWidth = 2.2f)
+                Spacer(Modifier.width(6.dp))
+                Text(label, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = if (on) C.OnLime else C.Muted)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimeTile(label: String, minutes: Int, modifier: Modifier, onClick: () -> Unit) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(C.Surface)
+            .clickable(role = Role.Button, onClickLabel = "Change $label time", onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = C.Muted)
+        Text(minuteLabel(minutes), fontFamily = Condensed, fontSize = 40.sp, color = C.Text)
     }
 }

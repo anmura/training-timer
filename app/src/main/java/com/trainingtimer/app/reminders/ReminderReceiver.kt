@@ -17,6 +17,7 @@ import com.trainingtimer.app.data.describe
 import com.trainingtimer.app.data.durationLabel
 import com.trainingtimer.app.data.timeLabel
 import com.trainingtimer.app.data.title
+import com.trainingtimer.app.data.isRepeat
 
 /** Fires reminders, handles the Snooze button and puts alarms back after a reboot. */
 class ReminderReceiver : BroadcastReceiver() {
@@ -37,7 +38,9 @@ class ReminderReceiver : BroadcastReceiver() {
         val r = find(id) ?: return
         // A snoozed one-time reminder is already switched off but should still ring.
         if (!r.enabled && !snoozed) return
-        if (!snoozed) {
+        if (!snoozed && r.isRepeat) {
+            ReminderScheduler.onRepeatFired(context, r)
+        } else if (!snoozed) {
             if (r.days.isEmpty()) {
                 // A one-time reminder switches itself off once it has fired.
                 Repo.saveReminder(r.copy(enabled = false))
@@ -93,9 +96,9 @@ object ReminderNotifier {
             .setContentIntent(openApp(context, nid, complexId = null))
         if (complex != null) {
             builder
-                .setContentTitle("${complex.name} at ${r.timeLabel()}")
+                .setContentTitle(if (r.isRepeat) "${complex.name} · ${r.timeLabel().lowercase()}" else "${complex.name} at ${r.timeLabel()}")
                 .setContentText("${complex.describe()} · ${complex.durationLabel()}. Ready when you are.")
-                .addAction(0, "Start", openApp(context, nid, complexId = complex.id))
+                .addAction(0, "Start", openApp(context, nid, complexId = complex.id, reminderId = r.id))
         } else {
             builder
                 .setContentTitle(r.title(data.complexes))
@@ -115,12 +118,13 @@ object ReminderNotifier {
     }
 
     /** Opens the app; with [complexId] it starts that workout right away. */
-    fun openApp(context: Context, notificationId: Int, complexId: String?): PendingIntent {
+    fun openApp(context: Context, notificationId: Int, complexId: String?, reminderId: String? = null): PendingIntent {
         val intent = Intent(context, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             .setData(Uri.parse("trainingtimer://open/$notificationId/${complexId ?: "home"}"))
             .putExtra(MainActivity.EXTRA_CANCEL_NOTIFICATION, notificationId)
         if (complexId != null) intent.putExtra(MainActivity.EXTRA_START_COMPLEX, complexId)
+        if (reminderId != null) intent.putExtra(MainActivity.EXTRA_REMINDER, reminderId)
         else intent.putExtra(MainActivity.EXTRA_SHOW_COMPLEXES, true)
         return PendingIntent.getActivity(context, notificationId, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }

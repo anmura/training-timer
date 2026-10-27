@@ -391,7 +391,8 @@ object Repo {
 
     fun setReminderEnabled(id: String, enabled: Boolean) {
         val r = _state.value.reminders.find { it.id == id } ?: return
-        saveReminder(r.copy(enabled = enabled))
+        // A repeating reminder counts its step from the moment it is switched on.
+        saveReminder(if (enabled && !r.enabled) r.copy(enabled = true, anchor = System.currentTimeMillis(), awaitingWorkout = false) else r.copy(enabled = enabled))
     }
 
     fun moveComplex(from: Int, to: Int) = update { d ->
@@ -511,6 +512,10 @@ object Codec {
                 .put("message", r.message).put("alarm", r.alarm).put("snooze", r.snoozeMinutes).put("enabled", r.enabled)
             if (r.complexId != null) o.put("complex", r.complexId)
             if (r.sound != null) o.put("sound", r.sound)
+            if (r.repeatMinutes > 0) {
+                o.put("every", r.repeatMinutes).put("from", r.fromMinute).put("until", r.untilMinute).put("anchor", r.anchor)
+                if (r.awaitingWorkout) o.put("awaiting", true)
+            }
             arr.put(o)
         }
         return arr
@@ -535,6 +540,11 @@ object Codec {
                 snoozeMinutes = o.optInt("snooze", 10).coerceIn(1, 60),
                 sound = if (o.has("sound")) o.optString("sound") else null,
                 enabled = o.optBoolean("enabled", true),
+                repeatMinutes = o.optInt("every", 0).coerceIn(0, 24 * 60),
+                fromMinute = o.optInt("from", 9 * 60).coerceIn(0, 24 * 60 - 1),
+                untilMinute = o.optInt("until", 18 * 60).coerceIn(1, 24 * 60),
+                anchor = o.optLong("anchor", 0L),
+                awaitingWorkout = o.optBoolean("awaiting", false),
             )
         }
         return out

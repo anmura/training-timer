@@ -140,19 +140,43 @@ data class Reminder(
     val snoozeMinutes: Int = 10,
     val sound: String? = null,
     val enabled: Boolean = true,
+    /** Repeat mode: remind every [repeatMinutes] (0 = once at [hour]:[minute]) between [fromMinute] and [untilMinute]. */
+    val repeatMinutes: Int = 0,
+    val fromMinute: Int = 9 * 60,
+    val untilMinute: Int = 18 * 60,
+    /** Repeat mode: the step is counted from this moment (switched on, last ring, end of a workout). Epoch ms. */
+    val anchor: Long = 0,
+    /** Repeat mode: a workout was started from this reminder; the step restarts when it ends. */
+    val awaitingWorkout: Boolean = false,
 )
+
+val Reminder.isRepeat: Boolean get() = repeatMinutes > 0
+
+fun minuteLabel(m: Int): String = "%02d:%02d".format(m / 60, m % 60)
+
+/** "Every 30 min", "Every 2 h", "Every 1.5 h", "Every 1 h 20 min". */
+fun intervalLabel(minutes: Int): String = when {
+    minutes < 60 -> "Every $minutes min"
+    minutes % 60 == 0 -> "Every ${minutes / 60} h"
+    minutes % 30 == 0 -> "Every ${minutes / 60}.5 h"
+    else -> "Every ${minutes / 60} h ${minutes % 60} min"
+}
+
+/** "09:00–18:00" */
+fun Reminder.windowLabel(): String = minuteLabel(fromMinute) + "–" + minuteLabel(untilMinute)
 
 private val DAY_SHORT = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 fun dayShort(day: Int): String = DAY_SHORT[(day - 1).coerceIn(0, 6)]
 
 /** "07:30" */
-fun Reminder.timeLabel(): String = "%02d:%02d".format(hour, minute)
+fun Reminder.timeLabel(): String = if (isRepeat) intervalLabel(repeatMinutes) else "%02d:%02d".format(hour, minute)
 
 /** "Every day", "Weekdays", "Weekends", "Mon · Wed · Fri" or "Once". */
 fun Reminder.daysLabel(): String {
     val d = days.sorted()
     return when {
+        d.isEmpty() && isRepeat -> "Every day"
         d.isEmpty() -> "Once"
         d.size == 7 -> "Every day"
         d == listOf(1, 2, 3, 4, 5) -> "Weekdays"

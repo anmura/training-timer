@@ -47,6 +47,8 @@ import com.trainingtimer.app.data.Complex
 import com.trainingtimer.app.data.ExerciseIcons
 import com.trainingtimer.app.data.Reminder
 import com.trainingtimer.app.data.Repo
+import com.trainingtimer.app.data.isRepeat
+import com.trainingtimer.app.data.minuteLabel
 import com.trainingtimer.app.data.UiIcons
 import com.trainingtimer.app.data.daysLabel
 import com.trainingtimer.app.data.describe
@@ -113,6 +115,7 @@ class AlarmActivity : ComponentActivity() {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             if (r.complexId != null && Repo.state.value.complexes.any { it.id == r.complexId }) {
                 intent.putExtra(MainActivity.EXTRA_START_COMPLEX, r.complexId)
+                intent.putExtra(MainActivity.EXTRA_REMINDER, r.id)
             } else {
                 intent.putExtra(MainActivity.EXTRA_SHOW_COMPLEXES, true)
             }
@@ -173,8 +176,20 @@ private fun AlarmScreen(
             Text("WORKOUT ALARM", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = C.Orange)
         }
         Spacer(Modifier.height(14.dp))
-        Text(r.timeLabel(), fontFamily = Condensed, fontSize = 104.sp, color = C.Text)
-        Text(r.daysLabel(), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = C.RestMuted)
+        if (r.isRepeat) {
+            Text(java.time.LocalTime.now().let { "%02d:%02d".format(it.hour, it.minute) }, fontFamily = Condensed, fontSize = 104.sp, color = C.Text)
+            Text("${r.timeLabel()} · until ${minuteLabel(r.untilMinute)}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = C.RestMuted)
+            Text(
+                "Start or Snooze: the next reminder comes ${r.timeLabel().removePrefix("Every ")} after you finish.",
+                fontSize = 13.sp,
+                color = C.RestMuted,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
+            )
+        } else {
+            Text(r.timeLabel(), fontFamily = Condensed, fontSize = 104.sp, color = C.Text)
+            Text(r.daysLabel(), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = C.RestMuted)
+        }
 
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             Box(

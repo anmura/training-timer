@@ -9,6 +9,8 @@ import android.os.Build
 import com.trainingtimer.app.MainActivity
 import com.trainingtimer.app.data.Reminder
 import com.trainingtimer.app.data.Repo
+import com.trainingtimer.app.data.isRepeat
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -21,6 +23,7 @@ object ReminderScheduler {
     /** Next time [r] should fire after [now], or null if it is switched off. */
     fun nextTrigger(r: Reminder, now: LocalDateTime = LocalDateTime.now()): LocalDateTime? {
         if (!r.enabled) return null
+        if (r.isRepeat) return nextRepeat(r, now)
         for (offset in 0..7) {
             val date = now.toLocalDate().plusDays(offset.toLong())
             val at = date.atTime(r.hour, r.minute)
@@ -28,6 +31,68 @@ object ReminderScheduler {
             if (r.days.isEmpty() || date.dayOfWeek.value in r.days) return at
         }
         return null
+    }
+
+    /**
+     * Repeat mode: [Reminder.anchor] + step, inside [from, until) on the chosen days (none = every day).
+     * Past the end of the window the next allowed day starts at "from"; missed times are skipped, not caught up.
+     */
+    private fun nextRepeat(r: Reminder, now: LocalDateTime): LocalDateTime? {
+        val step = r.repeatMinutes.toLong().coerceAtLeast(1)
+        if (r.untilMinute <= r.fromMinute) return null
+        val base = if (r.anchor > 0) Instant.ofEpochMilli(r.anchor).atZone(ZoneId.systemDefault()).toLocalDateTime() else now
+        var cand = base.plusMinutes(step)
+        repeat(3000) {
+            val date = cand.toLocalDate()
+            val start = date.atStartOfDay().plusMinutes(r.fromMinute.toLong())
+            val end = date.atStartOfDay().plusMinutes(r.untilMinute.toLong())
+            val dayOk = r.days.isEmpty() || date.dayOfWeek.value in r.days
+            cand = when {
+                !dayOk || !cand.isBefore(end) -> date.plusDays(1).atStartOfDay().plusMinutes(r.fromMinute.toLong())
+                cand.isBefore(start) -> start
+                !cand.isAfter(now) -> cand.plusMinutes(step)
+                else -> return cand
+            }
+        }
+        return null
+    }
+
+    /** The times a repeating reminder would ring today (for the editor's preview). */
+    fun todayTimes(r: Reminder, now: LocalDateTime = LocalDateTime.now()): List<LocalDateTime> {
+        val out = ArrayList<LocalDateTime>()
+        var probe = r.copy(enabled = true)
+        var t = now
+        while (out.size < 48) {
+            val next = nextRepeat(probe, t) ?: break
+            if (next.toLocalDate() != now.toLocalDate()) break
+            out += next
+            probe = probe.copy(anchor = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+            t = next
+        }
+        return out
+    }
+
+    /** A repeating reminder rang: the next step counts from now. */
+    fun onRepeatFired(context: Context, r: Reminder) {
+        Repo.saveReminder(r.copy(anchor = System.currentTimeMillis(), awaitingWorkout = false))
+    }
+
+    /** A workout was started from reminder [id]: if it repeats, the step restarts when the workout ends. */
+    fun startedWorkout(context: Context, id: String?, plannedSeconds: Int) {
+        val r = Repo.state.value.reminders.find { it.id == id } ?: return
+        if (!r.isRepeat) return
+        val am = context.getSystemService(AlarmManager::class.java)
+        am?.cancel(fireIntent(context, r.id, snooze = true))
+        // Until the workout ends, plan the next one as if it ends on time (in case it never reports back).
+        Repo.saveReminder(r.copy(anchor = System.currentTimeMillis() + plannedSeconds * 1000L, awaitingWorkout = true))
+    }
+
+    /** The workout ended: reminders waiting for it count their step from now. */
+    fun workoutEnded(context: Context) {
+        Repo.init(context)
+        for (r in Repo.state.value.reminders.filter { it.awaitingWorkout }) {
+            Repo.saveReminder(r.copy(anchor = System.currentTimeMillis(), awaitingWorkout = false))
+        }
     }
 
     /** "today 07:30", "tomorrow 07:30", "Mon 07:30". */
@@ -65,6 +130,8 @@ object ReminderScheduler {
         val am = context.getSystemService(AlarmManager::class.java) ?: return
         val at = System.currentTimeMillis() + r.snoozeMinutes * 60_000L
         setAlarm(context, am, at, fireIntent(context, r.id, snooze = true), r.alarm)
+        // A repeating reminder waits: its step counts from the end of the snooze (or of the workout, if one starts).
+        if (r.isRepeat) Repo.saveReminder(r.copy(anchor = at))
     }
 
     /** After a reboot, an app update or a clock change every alarm has to be set again. */

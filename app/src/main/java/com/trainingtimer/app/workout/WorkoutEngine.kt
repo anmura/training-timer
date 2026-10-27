@@ -203,6 +203,7 @@ object WorkoutEngine {
     }
 
     fun stop() {
+        appContext?.let { com.trainingtimer.app.reminders.ReminderScheduler.workoutEnded(it) }
         stopTicking()
         _state.value = null
         tone?.release()
@@ -296,6 +297,7 @@ object WorkoutEngine {
         if (s.paused) pausedTotal += now() - pausedAt
         val actual = ((now() - workoutStartedAt - pausedTotal) / 1000).toInt().coerceAtLeast(0)
         _state.value = s.copy(finished = true, paused = false, remainingMs = 0, actualSeconds = actual)
+        appContext?.let { com.trainingtimer.app.reminders.ReminderScheduler.workoutEnded(it) }
         val settings = Repo.state.value.settings
         if (settings.beeps) toneGenerator()?.startTone(ToneGenerator.TONE_PROP_ACK, 900)
         if (settings.vibration) vibrate(longArrayOf(0, 400, 150, 400, 150, 600))
