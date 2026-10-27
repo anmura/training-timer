@@ -49,6 +49,7 @@ object Repo {
         installEquipment()
         installAssetProgram("program_climbing_v1", "program_climbing.json")
         installAssetProgram("program_classic_v1", "program_classic.json")
+        applyCategoryMap("categories_v2", "categories_v2.json")
     }
 
     /**
@@ -118,6 +119,46 @@ object Repo {
     }
 
     // ---------- categories ----------
+
+    /**
+     * Once per install: give every built-in exercise (found by name) its proper categories.
+     * Missing categories (e.g. Кардио, Скалолазание) are created; exercises not in the map are left alone.
+     */
+    private fun applyCategoryMap(flag: String, asset: String) {
+        val prefs = context.getSharedPreferences("app", Context.MODE_PRIVATE)
+        if (prefs.getBoolean(flag, false)) return
+        try {
+            val root = JSONObject(context.assets.open(asset).bufferedReader().use { it.readText() })
+            val colors = root.optJSONObject("colors") ?: JSONObject()
+            val mapObj = root.getJSONObject("map")
+            val map = HashMap<String, List<String>>()
+            for (key in mapObj.keys()) {
+                val arr = mapObj.getJSONArray(key)
+                map[key.trim().lowercase()] = (0 until arr.length()).map { arr.getString(it) }
+            }
+            update { d ->
+                val cats = d.categories.toMutableList()
+                fun idFor(name: String): String {
+                    cats.find { it.name.trim().equals(name, ignoreCase = true) }?.let { return it.id }
+                    val used = cats.map { it.color }.toSet()
+                    val color = colors.optString(name).ifEmpty { null }
+                        ?: CategoryColors.palette.firstOrNull { it !in used }
+                        ?: CategoryColors.palette[cats.size % CategoryColors.palette.size]
+                    val c = Category(newId(), name, color)
+                    cats += c
+                    return c.id
+                }
+                val exercises = d.exercises.map { e ->
+                    val names = map[e.name.trim().lowercase()] ?: return@map e
+                    e.copy(categories = names.map { idFor(it) }.distinct())
+                }
+                d.copy(categories = cats, exercises = exercises)
+            }
+        } catch (e: Exception) {
+            // Keep the categories as they are.
+        }
+        prefs.edit().putBoolean(flag, true).apply()
+    }
 
     fun categoryNameExists(name: String, exceptId: String?): Boolean {
         val n = name.trim().lowercase()
