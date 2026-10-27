@@ -391,8 +391,8 @@ object Repo {
 
     fun setReminderEnabled(id: String, enabled: Boolean) {
         val r = _state.value.reminders.find { it.id == id } ?: return
-        // A repeating reminder counts its step from the moment it is switched on.
-        saveReminder(if (enabled && !r.enabled) r.copy(enabled = true, anchor = System.currentTimeMillis(), awaitingWorkout = false) else r.copy(enabled = enabled))
+        // Switched back on, a repeating reminder starts again on its From grid.
+        saveReminder(if (enabled && !r.enabled) r.copy(enabled = true, anchor = 0, awaitingWorkout = false) else r.copy(enabled = enabled))
     }
 
     fun moveComplex(from: Int, to: Int) = update { d ->

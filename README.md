@@ -64,7 +64,7 @@ No account, no ads, no internet connection. All data stays on the phone.
 - Remind about a specific workout (start it right from the reminder) or just "time to train" with your own message
 - **Notification:** a banner with Start (or Choose workout) and Snooze
 - **Alarm:** rings full screen over the lock screen, even in silent mode, with your chosen sound; Start workout, Snooze (5–30 min) or Dismiss. If nobody reacts in 5 minutes it snoozes itself
-- **Repeat** mode: remind every X (15 min – 6 h) between two times, e.g. every 2 h from 09:00 to 18:00 on weekdays. Each day the first ring is exactly at *From*, then every step (switched on later in the day, the step counts from that moment); nothing rings at or after *Until*. Start or Snooze on a repeating reminder restarts the step when the workout ends, and the finish screen shows when the next one comes
+- **Repeat** mode: remind every X (15 min – 6 h) between two times, e.g. every 2 h from 09:00 to 18:00 on weekdays. Rings sit on a grid from *From* (e.g. 23:00, 23:15, 23:30 …), also when you switch it on in the middle of the window; nothing rings at or after *Until*. Start or Snooze on a repeating reminder restarts the step when the workout ends, and the finish screen shows when the next one comes
 - Repeating reminders have **Show times**: the next ring and how many are left today; open it to see today's times (done ones struck through, the next one highlighted) and the next day's
 - One-time reminders switch themselves off after they ring; everything is set again after a reboot, an app update or a clock change
 - Complex cards on the home screen show their reminder, for example *Mon, Wed, Fri · 07:30*

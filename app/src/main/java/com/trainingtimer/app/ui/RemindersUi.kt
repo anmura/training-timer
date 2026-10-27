@@ -424,8 +424,8 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
         repeatMinutes = if (repeat) every else 0,
         fromMinute = from,
         untilMinute = until,
-        // Saving (re)starts the step: it counts from now.
-        anchor = System.currentTimeMillis(),
+        // Saving puts the rings on the From grid (From, From + step, …).
+        anchor = 0,
         awaitingWorkout = false,
     )
 
@@ -582,8 +582,7 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
                             Text("${today.size} times today", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = C.Lime)
                         }
                         Text(
-                            "Each day starts with a ring at ${minuteLabel(from)}; switched on later, the step counts from now. " +
-                                "Nothing at or after ${minuteLabel(until)}. " +
+                            "Every day at ${minuteLabel(from)}, then every ${intervalLabel(every).removePrefix("Every ")}. Nothing at or after ${minuteLabel(until)}. " +
                                 "After a workout started from this reminder (or a snooze), the step starts again when it ends.",
                             fontSize = 12.sp,
                             color = C.Muted,

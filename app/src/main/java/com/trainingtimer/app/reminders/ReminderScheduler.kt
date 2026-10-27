@@ -40,10 +40,15 @@ object ReminderScheduler {
     private fun nextRepeat(r: Reminder, now: LocalDateTime): LocalDateTime? {
         val step = r.repeatMinutes.toLong().coerceAtLeast(1)
         if (r.untilMinute <= r.fromMinute) return null
-        val base = if (r.anchor > 0) Instant.ofEpochMilli(r.anchor).atZone(ZoneId.systemDefault()).toLocalDateTime() else now
-        // Switched on (or last rang) before the window opens: the first ring is exactly at "from".
-        val baseStart = base.toLocalDate().atStartOfDay().plusMinutes(r.fromMinute.toLong())
-        var cand = if (base.isBefore(baseStart)) baseStart else base.plusMinutes(step)
+        // No anchor: rings sit on the From grid (From, From + step, …). An anchor (a ring, the end of a
+        // snooze or a workout) moves the step to count from that moment.
+        var cand = if (r.anchor <= 0) {
+            now.toLocalDate().atStartOfDay().plusMinutes(r.fromMinute.toLong())
+        } else {
+            val base = Instant.ofEpochMilli(r.anchor).atZone(ZoneId.systemDefault()).toLocalDateTime()
+            val baseStart = base.toLocalDate().atStartOfDay().plusMinutes(r.fromMinute.toLong())
+            if (base.isBefore(baseStart)) baseStart else base.plusMinutes(step)
+        }
         repeat(3000) {
             val date = cand.toLocalDate()
             val start = date.atStartOfDay().plusMinutes(r.fromMinute.toLong())
@@ -115,7 +120,8 @@ object ReminderScheduler {
 
     /** A repeating reminder rang: the next step counts from now. */
     fun onRepeatFired(context: Context, r: Reminder) {
-        Repo.saveReminder(r.copy(anchor = System.currentTimeMillis(), awaitingWorkout = false))
+        // On the From grid it stays on the grid; after a snooze or a workout it keeps counting from the last ring.
+        Repo.saveReminder(r.copy(anchor = if (r.anchor <= 0) 0 else System.currentTimeMillis(), awaitingWorkout = false))
     }
 
     /** A workout was started from reminder [id]: if it repeats, the step restarts when the workout ends. */
