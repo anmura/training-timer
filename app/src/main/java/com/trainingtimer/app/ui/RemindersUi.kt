@@ -231,6 +231,111 @@ private fun ReminderCard(r: Reminder, title: String, isWorkout: Boolean, onClick
             Spacer(Modifier.width(8.dp))
             TypeBadge(r.alarm, alpha)
         }
+        if (r.isRepeat && r.enabled) RepeatTimes(r)
+    }
+}
+
+/** Variant A: "Next 22:43 · 2 more today" with Show times → chips for today and the next day. */
+@Composable
+private fun RepeatTimes(r: Reminder) {
+    var open by rememberSaveable(r.id) { mutableStateOf(false) }
+    val plan = remember(r, open) { ReminderScheduler.dayPlan(r) }
+    val fmt = { t: java.time.LocalDateTime -> "%02d:%02d".format(t.hour, t.minute) }
+    val next = ReminderScheduler.nextTrigger(r)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(C.NavBg)
+                .clickable(role = Role.Button, onClickLabel = if (open) "Hide times" else "Show times") { open = !open }
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ColorDot(C.Lime, 8.dp)
+            Spacer(Modifier.width(8.dp))
+            val more = (plan.upcoming.size - 1).coerceAtLeast(0)
+            Text(
+                when {
+                    next == null -> "No upcoming times"
+                    plan.upcoming.isEmpty() -> "Next ${ReminderScheduler.whenLabel(next)}"
+                    more == 0 -> "Next ${fmt(next)} · last today"
+                    else -> "Next ${fmt(next)} · $more more today"
+                },
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFFD9DDE1),
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+            )
+            Text(if (open) "Hide" else "Show times", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = C.Lime)
+            Spacer(Modifier.width(4.dp))
+            PathIcon(if (open) UiIcons.CHEVRON_UP else UiIcons.CHEVRON_DOWN, C.Lime, size = 16.dp, strokeWidth = 2.6f)
+        }
+        if (open) {
+            if (plan.past.isNotEmpty() || plan.upcoming.isNotEmpty()) {
+                DayHeader("TODAY", if (plan.past.isNotEmpty()) "${plan.past.size} done · ${plan.upcoming.size} to go" else "${plan.upcoming.size} to go")
+                TimeChips(plan.past.map { fmt(it) }, plan.upcoming.map { fmt(it) }, nextIndex = 0)
+            }
+            val day = plan.nextDay
+            if (day != null && plan.nextDayTimes.isNotEmpty()) {
+                val label = if (day == java.time.LocalDate.now().plusDays(1)) "TOMORROW" else day.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH).uppercase()
+                DayHeader(label, if (plan.nextDayTimes.size == 1) "1 time" else "${plan.nextDayTimes.size} times")
+                TimeChips(emptyList(), plan.nextDayTimes.map { fmt(it) }, nextIndex = if (plan.upcoming.isEmpty()) 0 else -1)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayHeader(title: String, note: String) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(title, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = C.Muted, modifier = Modifier.weight(1f))
+        Text(note, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = C.Faint)
+    }
+}
+
+/** Times in rows of four: past ones struck through, the next one in lime. */
+@Composable
+private fun TimeChips(past: List<String>, upcoming: List<String>, nextIndex: Int) {
+    val all = past.map { it to 0 } + upcoming.mapIndexed { i, t -> t to if (i == nextIndex) 2 else 1 }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        for (row in all.chunked(4)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                for ((t, state) in row) {
+                    val shape = RoundedCornerShape(12.dp)
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .height(34.dp)
+                            .clip(shape)
+                            .background(
+                                when (state) {
+                                    2 -> C.Lime
+                                    1 -> C.Surface2
+                                    else -> Color.Transparent
+                                },
+                            )
+                            .border(1.5.dp, if (state == 0) C.Line else Color.Transparent, shape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            t,
+                            fontFamily = Condensed,
+                            fontSize = 19.sp,
+                            color = when (state) {
+                                2 -> C.OnLime
+                                1 -> C.Text
+                                else -> C.Faint
+                            },
+                            textDecoration = if (state == 0) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                        )
+                    }
+                }
+                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
     }
 }
 

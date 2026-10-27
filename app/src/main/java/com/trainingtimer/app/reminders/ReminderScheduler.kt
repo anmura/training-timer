@@ -74,6 +74,45 @@ object ReminderScheduler {
         return out
     }
 
+    /** What a repeating reminder does today and on its next day, for the "Show times" list. */
+    class DayPlan(
+        val past: List<LocalDateTime>,
+        val upcoming: List<LocalDateTime>,
+        val nextDay: LocalDate?,
+        val nextDayTimes: List<LocalDateTime>,
+    )
+
+    fun dayPlan(r: Reminder, now: LocalDateTime = LocalDateTime.now()): DayPlan {
+        val today = now.toLocalDate()
+        val step = r.repeatMinutes.toLong().coerceAtLeast(1)
+        fun grid(date: LocalDate, before: LocalDateTime?): List<LocalDateTime> {
+            val out = ArrayList<LocalDateTime>()
+            var t = date.atStartOfDay().plusMinutes(r.fromMinute.toLong())
+            val end = date.atStartOfDay().plusMinutes(r.untilMinute.toLong())
+            while (t.isBefore(end) && out.size < 96 && (before == null || t.isBefore(before))) {
+                out += t
+                t = t.plusMinutes(step)
+            }
+            return out
+        }
+        val dayOk = { d: LocalDate -> r.days.isEmpty() || d.dayOfWeek.value in r.days }
+        // Times that would already have rung today (on the From grid, up to the last ring / switch-on).
+        val anchorAt = if (r.anchor > 0) Instant.ofEpochMilli(r.anchor).atZone(ZoneId.systemDefault()).toLocalDateTime() else now
+        val past = if (dayOk(today)) grid(today, minOf(now, anchorAt.plusSeconds(1))) else emptyList()
+        val upcoming = ArrayList<LocalDateTime>()
+        var probe = r
+        var t = now
+        while (upcoming.size < 96) {
+            val next = nextRepeat(probe, t) ?: break
+            if (next.toLocalDate() != today) break
+            upcoming += next
+            probe = probe.copy(anchor = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), awaitingWorkout = false)
+            t = next
+        }
+        val nextDay = (1..7).map { today.plusDays(it.toLong()) }.firstOrNull { dayOk(it) }
+        return DayPlan(past.filter { p -> upcoming.none { it == p } }, upcoming, nextDay, nextDay?.let { grid(it, null) } ?: emptyList())
+    }
+
     /** A repeating reminder rang: the next step counts from now. */
     fun onRepeatFired(context: Context, r: Reminder) {
         Repo.saveReminder(r.copy(anchor = System.currentTimeMillis(), awaitingWorkout = false))
