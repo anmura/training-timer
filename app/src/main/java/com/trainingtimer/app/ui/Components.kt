@@ -196,12 +196,13 @@ fun BigButton(
     enabled: Boolean = true,
     height: Dp = 56.dp,
     fontSize: TextUnit = 16.sp,
+    corner: Dp = 18.dp,
 ) {
     Button(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.height(height),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(corner),
         colors = ButtonDefaults.buttonColors(
             containerColor = container,
             contentColor = content,

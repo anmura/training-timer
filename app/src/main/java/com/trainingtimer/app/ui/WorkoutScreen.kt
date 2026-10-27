@@ -455,18 +455,18 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                 if (p.isReps) {
                     RepsRing(s, repsRingSize, rounds)
                     p.weight?.let { WeightPill(it, p) }
-                    BigButton(
-                        "Done",
-                        onClick = { WorkoutEngine.done() },
-                        icon = UiIcons.CHECK,
-                        height = 76.dp,
-                        fontSize = 22.sp,
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp)
-                            .fillMaxWidth(),
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                    // Variant D2: a Done pill between previous and skip.
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         RoundIconButton(UiIcons.PREV, "Previous", { WorkoutEngine.previous() }, size = 52.dp, background = C.Surface, filled = true)
+                        BigButton(
+                            "Done",
+                            onClick = { WorkoutEngine.done() },
+                            icon = UiIcons.CHECK,
+                            height = 60.dp,
+                            fontSize = 19.sp,
+                            corner = 30.dp,
+                            modifier = Modifier.width(164.dp),
+                        )
                         RoundIconButton(UiIcons.NEXT, "Skip", { WorkoutEngine.skip() }, size = 52.dp, background = C.Surface, filled = true)
                     }
                     return@Column
@@ -625,13 +625,13 @@ private val TITLE_BLOCK = 124.dp
 /**
  * Space kept under the timer. It depends only on what the whole workout contains, so the timer
  * keeps one size for the entire workout but doesn't shrink for controls this workout never shows.
- * Timed set: top gap + play/pause controls. Reps set: stopwatch line + Done + previous/skip.
+ * Timed set: top gap + play/pause controls. Reps set: stopwatch line + one row with previous, Done and skip.
  * Plus the weight pill when any exercise uses weight, and a bottom margin.
  */
 private fun belowRing(phases: List<Phase>): Dp {
     val work = phases.filter { it.type == PhaseType.WORK }
     val timed = 12.dp + 14.dp + 88.dp
-    val reps = 12.dp + 14.dp + 20.dp + 14.dp + 76.dp + 14.dp + 52.dp
+    val reps = 12.dp + 14.dp + 20.dp + 14.dp + 60.dp
     val controls = if (work.any { it.isReps }) maxOf(timed, reps) else timed
     val weight = if (work.any { it.weight != null }) 48.dp + 14.dp else 0.dp
     return controls + weight + 16.dp
