@@ -361,10 +361,11 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
     // "Round 2 of 3" shows inside the timer and the round badge flashes.
     val sweep = remember(s.index) { Animatable(if (p.roundStart) 0f else 1f) }
     var announcing by remember(s.index) { mutableStateOf(p.roundStart) }
-    // The edge glow is a short flash at the start of the round, shorter than the rest of the announcement.
-    var glow by remember(s.index) { mutableStateOf(p.roundStart) }
+    // The edge glow is a short flash, shorter than the rest of the announcement.
+    // Only when a round is finished and the next one begins, not when a cycle starts.
+    var glow by remember(s.index) { mutableStateOf(p.roundStart && p.round > 1) }
     LaunchedEffect(s.index) {
-        if (p.roundStart) {
+        if (glow) {
             delay(450)
             glow = false
         }
