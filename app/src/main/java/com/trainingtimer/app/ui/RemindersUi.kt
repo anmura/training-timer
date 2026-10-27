@@ -461,12 +461,21 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Text("TODAY", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = C.Lime)
+                        // Short intervals give many times: show the first few, then the count and the last one.
+                        val fmt = { t: java.time.LocalDateTime -> "%02d:%02d".format(t.hour, t.minute) }
                         Text(
-                            if (today.isEmpty()) "No more reminders today" else today.joinToString("  ·  ") { "%02d:%02d".format(it.hour, it.minute) },
+                            when {
+                                today.isEmpty() -> "No more reminders today"
+                                today.size <= 5 -> today.joinToString("  ·  ") { fmt(it) }
+                                else -> today.take(3).joinToString("  ·  ") { fmt(it) } + "  …  " + fmt(today.last())
+                            },
                             fontFamily = Condensed,
                             fontSize = 20.sp,
                             color = C.Text,
                         )
+                        if (today.size > 5) {
+                            Text("${today.size} times today", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = C.Lime)
+                        }
                         Text(
                             "Counted from now. Nothing at or after ${minuteLabel(until)}. Next days start at ${minuteLabel(from)}. " +
                                 "After a workout started from this reminder (or a snooze), the step starts again when it ends.",
@@ -653,7 +662,11 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
         ActionBar {
             val target = if (what == What.WORKOUT) data.complexes.find { it.id == complexId }?.name ?: "—" else "“${message.trim().ifEmpty { DEFAULT_REMINDER_MESSAGE }}”"
             Text(
-                "${if (alarm) "Alarm" else "Notification"} at ${"%02d:%02d".format(hour, minute)} · $target",
+                if (repeat) {
+                    "${if (alarm) "Alarm" else "Notification"} ${intervalLabel(every).lowercase()}, ${minuteLabel(from)}–${minuteLabel(until)} · $target"
+                } else {
+                    "${if (alarm) "Alarm" else "Notification"} at ${"%02d:%02d".format(hour, minute)} · $target"
+                },
                 Modifier.weight(1f),
                 fontSize = 13.sp,
                 color = C.Muted,
