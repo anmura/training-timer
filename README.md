@@ -18,6 +18,7 @@ No account, no ads, no internet connection. All data stays on the phone.
 - Filter chips and a grouped list by category, plus search
 - **Equipment** (dumbbells, mat, pull-up bar…) with its own icons: an exercise shows only the equipment and categories it has, as a short list; **Add** opens the full list with search and *New equipment* / *New category*
 - Tap equipment in an exercise to edit it: name, icon and every exercise that uses it
+- Complex cards show the equipment they need (*3 items needed*); **Start** opens an overview — total time, sets, cycles, the equipment you'll need and every exercise — with **Start workout**
 - Filter the library (and the exercise pickers in the complex editor) by equipment as well as by category; each exercise shows small icons of its equipment
 - Settings › Library: manage categories (name, colour, order) and equipment (name, icon)
 - Ready-made exercises for mobility, strength, stretching and wrists, plus 12 pull-up variations
@@ -41,7 +42,7 @@ No account, no ads, no internet connection. All data stays on the phone.
 - Names too long for three lines show a ⌄ button: tap the name to read it in full in a card over the timer, tap again to close
 - **Progress line with cycles**: every set is a segment, cycles sit on their own band and rounds are spaced apart; the current set is white. In big complexes the block you are in keeps per-set detail and takes at least half the line, while other cycles shrink to one segment per round (or per cycle)
 - In a cycle: a **round ring** around the timer with one segment per round (the current round is white) and a *2/3* badge in the header
-- **New round** animation: the next segment draws in with a glow, *Round 2 of 3* appears on the timer, the badge flashes, and a distinct triple beep and buzz play
+- **New round** animation: the screen edges glow lime, the next segment draws in with a glow, *Round 2 of 3* appears on the timer, the badge flashes, and a distinct triple beep and buzz play
 - Reps sets show the target count and a small stopwatch; tap the big **Done** button when you finish and the next rest starts
 - Rest screen with the next exercise shown large and the two after it (with reps and weight)
 - Pause, skip, previous and +10 s
