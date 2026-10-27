@@ -77,6 +77,7 @@ fun ColorDot(color: Color, size: Dp = 8.dp) {
     )
 }
 
+/** Filter chip; looks the same as the equipment chips: lime outline and ✕ when selected. */
 @Composable
 fun FilterChip(
     label: String,
@@ -84,26 +85,30 @@ fun FilterChip(
     onClick: () -> Unit,
     color: Color? = null,
     count: Int? = null,
+    showClose: Boolean = color != null,
 ) {
     val shape = RoundedCornerShape(18.dp)
     Row(
         Modifier
             .height(36.dp)
             .clip(shape)
-            .background(if (selected) C.Lime else C.Surface)
+            .background(if (selected) C.LimeDim else C.Surface)
             .border(1.5.dp, if (selected) C.Lime else C.Line, shape)
             .clickable(role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 14.dp),
+            .padding(start = if (color != null) 12.dp else 14.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (color != null) {
             ColorDot(color)
             Spacer(Modifier.width(7.dp))
         }
-        Text(label, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = if (selected) C.OnLime else C.Text, maxLines = 1, softWrap = false)
-        if (count != null) {
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = if (selected) C.Lime else C.Text, maxLines = 1, softWrap = false)
+        if (selected && showClose) {
             Spacer(Modifier.width(6.dp))
-            Text("$count", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = if (selected) C.OnLime.copy(alpha = 0.65f) else C.Muted, maxLines = 1)
+            PathIcon(UiIcons.CLOSE, C.Lime, size = 14.dp, strokeWidth = 2.6f)
+        } else if (count != null) {
+            Spacer(Modifier.width(6.dp))
+            Text("$count", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = C.Muted, maxLines = 1)
         }
     }
 }
@@ -150,14 +155,14 @@ fun CategoryFilterRow(
             FilterChip(
                 c.name,
                 selected == c.id,
-                { onSelect(c.id) },
+                { onSelect(if (selected == c.id) null else c.id) },
                 color = categoryColor(c.color),
                 count = exercises.count { c.id in it.categories },
             )
         }
         val none = exercises.count { it.categories.isEmpty() }
         if (none > 0 && categories.isNotEmpty()) {
-            FilterChip("No category", selected == NO_CATEGORY, { onSelect(NO_CATEGORY) }, color = C.Faint, count = none)
+            FilterChip("No category", selected == NO_CATEGORY, { onSelect(if (selected == NO_CATEGORY) null else NO_CATEGORY) }, color = C.Faint, count = none)
         }
     }
 }
