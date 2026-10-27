@@ -430,7 +430,6 @@ private fun ExercisesTab(
     var query by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
     var toDelete by remember { mutableStateOf<Exercise?>(null) }
-    var manageCategories by remember { mutableStateOf(false) }
     var eqFilter by rememberSaveable { mutableStateOf<String?>(null) }
     // A deleted category or equipment can't stay selected.
     val activeFilter = filter?.takeIf { f -> f == NO_CATEGORY || data.categories.any { it.id == f } }
@@ -477,7 +476,6 @@ private fun ExercisesTab(
                 exercises = searched.withEquipment(activeEq),
                 selected = activeFilter,
                 onSelect = { filter = it },
-                onManage = { manageCategories = true },
             )
             Spacer(Modifier.height(8.dp))
             EquipmentFilterRow(
@@ -547,9 +545,6 @@ private fun ExercisesTab(
                 }
             }
         }
-    }
-    if (manageCategories) {
-        CategoryManagerSheet(data, onDismiss = { manageCategories = false })
     }
     toDelete?.let { e ->
         val used = Repo.usageCount(e.id)
