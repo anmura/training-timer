@@ -58,6 +58,7 @@ import com.trainingtimer.app.data.AppData
 import com.trainingtimer.app.data.Category
 import com.trainingtimer.app.data.Complex
 import com.trainingtimer.app.data.Exercise
+import com.trainingtimer.app.data.Equipment
 import com.trainingtimer.app.data.ImportExport
 import com.trainingtimer.app.data.Repo
 import com.trainingtimer.app.data.UiIcons
@@ -314,6 +315,7 @@ private fun ComplexesTab(
             ComplexCard(
                 complex = c,
                 exById = exById,
+                equipment = data.equipmentNeeded(c).map { it.first },
                 reminders = data.reminders.filter { it.enabled && it.complexId == c.id },
                 handle = handle,
                 onStart = { onStart(c) },
@@ -341,6 +343,7 @@ private fun ComplexesTab(
 private fun ComplexCard(
     complex: Complex,
     exById: Map<String, Exercise>,
+    equipment: List<Equipment>,
     reminders: List<Reminder>,
     handle: Modifier,
     onStart: () -> Unit,
@@ -367,6 +370,7 @@ private fun ComplexCard(
             ) {
                 Text(complex.name, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
                 Text(complex.describe(), fontSize = 13.sp, color = C.Muted)
+                if (equipment.isNotEmpty()) NeededStack(equipment)
                 if (reminders.isNotEmpty()) ReminderChip(reminders)
             }
             Text(

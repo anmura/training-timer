@@ -35,6 +35,7 @@ sealed interface Screen {
     data object Home : Screen
     data class ExerciseEditor(val id: String?) : Screen
     data class ComplexEditor(val id: String?) : Screen
+    data class ComplexOverview(val id: String) : Screen
     data object Settings : Screen
     data object Categories : Screen
     data object EquipmentList : Screen
@@ -95,7 +96,7 @@ fun App(onStartWorkout: (Complex) -> Unit) {
                 data = data,
                 tab = tab,
                 onTab = { tab = it },
-                onStart = { onStartWorkout(it) },
+                onStart = { push(Screen.ComplexOverview(it.id)) },
                 onCreateComplex = { push(Screen.ComplexEditor(null)) },
                 onEditComplex = { push(Screen.ComplexEditor(it)) },
                 onAddExercise = { push(Screen.ExerciseEditor(null)) },
@@ -108,6 +109,19 @@ fun App(onStartWorkout: (Complex) -> Unit) {
                     data = data,
                     onClose = { pop() },
                     onEditEquipment = { push(Screen.EquipmentEditor(it)) },
+                )
+            }
+            is Screen.ComplexOverview -> key(top) {
+                ComplexOverviewScreen(
+                    complex = data.complexes.find { it.id == top.id },
+                    data = data,
+                    onBack = { pop() },
+                    onEdit = { push(Screen.ComplexEditor(top.id)) },
+                    onStart = {
+                        // After the workout you come back to the list, not to this page.
+                        pop()
+                        onStartWorkout(it)
+                    },
                 )
             }
             is Screen.ComplexEditor -> key(top) {

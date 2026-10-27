@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -869,5 +870,44 @@ fun LibraryEntry(title: String, subtitle: String, iconPath: String, tint: Color,
             Text(subtitle, fontSize = 13.sp, color = C.Muted)
         }
         PathIcon(UiIcons.FORWARD, C.Muted, size = 22.dp, strokeWidth = 2.2f)
+    }
+}
+
+/** Equipment the complex needs, each with how many of its exercises use it, in order of first use. */
+fun AppData.equipmentNeeded(complex: com.trainingtimer.app.data.Complex): List<Pair<Equipment, Int>> {
+    val exById = exercises.associateBy { it.id }
+    val used = complex.exerciseIds().distinct().mapNotNull { exById[it] }
+    val ids = used.flatMap { it.equipment }.distinct()
+    return ids.mapNotNull { id -> equipment.find { it.id == id }?.let { q -> q to used.count { id in it.equipment } } }
+}
+
+/** Complex card: a small stack of equipment icons and "3 items needed". */
+@Composable
+fun NeededStack(items: List<Equipment>) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Row {
+            items.take(3).forEachIndexed { i, q ->
+                Box(
+                    Modifier
+                        .padding(start = if (i == 0) 0.dp else 0.dp)
+                        .offset(x = (-6 * i).dp)
+                        .size(26.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(C.Surface)
+                        .padding(2.dp)
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(C.LimeDim),
+                    contentAlignment = Alignment.Center,
+                ) { PathIcon(EquipmentIcons.path(q.icon), C.Lime, size = 14.dp, strokeWidth = 2.2f) }
+            }
+        }
+        val shift = (-6 * (minOf(items.size, 3) - 1)).dp
+        Text(
+            if (items.size == 1) "1 item needed" else "${items.size} items needed",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = C.Lime,
+            modifier = Modifier.offset(x = shift).padding(start = 8.dp),
+        )
     }
 }
