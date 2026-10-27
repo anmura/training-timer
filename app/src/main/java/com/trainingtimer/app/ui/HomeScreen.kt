@@ -149,7 +149,7 @@ fun HomeScreen(
                     },
                 )
             } else {
-                ExercisesTab(data, onEditExercise, onImportExport = { showSheet = true })
+                ExercisesTab(data, onEditExercise, onImportExport = { showSheet = true }, onSettings = onSettings)
             }
         }
     }
@@ -426,6 +426,7 @@ private fun ExercisesTab(
     data: AppData,
     onEdit: (String) -> Unit,
     onImportExport: () -> Unit,
+    onSettings: () -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf<String?>(null) }
@@ -460,7 +461,11 @@ private fun ExercisesTab(
                     if (data.exercises.size == 1) "1 exercise" else "${data.exercises.size} exercises",
                     "Exercises",
                 ) {
-                    PillButton("Import", UiIcons.IMPORT_EXPORT, onImportExport)
+                    // Same buttons as on the Complexes tab.
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        RoundIconButton(UiIcons.IMPORT_EXPORT, "Import or export exercises", onImportExport, background = C.Surface, iconSize = 20.dp, tint = C.Lime)
+                        RoundIconButton(UiIcons.GEAR, "Settings", onSettings, background = C.Surface, iconSize = 22.dp, strokeWidth = 1.8f)
+                    }
                 }
             }
         }
