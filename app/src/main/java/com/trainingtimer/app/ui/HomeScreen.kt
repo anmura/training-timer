@@ -291,7 +291,7 @@ private fun ComplexesTab(
         TabHeader("Your training", "Complexes") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 RoundIconButton(UiIcons.IMPORT_EXPORT, "Import or export complexes", onImportExport, background = C.Surface, iconSize = 20.dp, tint = C.Lime)
-                RoundIconButton(UiIcons.SETTINGS, "Settings", onSettings, background = C.Surface, iconSize = 20.dp)
+                RoundIconButton(UiIcons.GEAR, "Settings", onSettings, background = C.Surface, iconSize = 22.dp, strokeWidth = 1.8f)
             }
         }
         if (data.complexes.isEmpty()) {
