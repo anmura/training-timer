@@ -46,6 +46,7 @@ No account, no ads, no internet connection. All data stays on the phone.
 - Reps sets show the target count and a small stopwatch; tap the big **Done** button when you finish and the next rest starts
 - Rest screen with the next exercise shown large and the two after it (with reps and weight)
 - Pause, skip, previous and +10 s
+- **Breathing reminders** (Settings, off by default): during exercises a *Breathe* icon pops up with a soft sound and a short buzz every N seconds of exercise time (10–180 s; rests don't count), then fades away by itself
 - Beeps in the last 3 seconds and at every switch, vibration on each switch (both can be turned off)
 - Keeps running with the screen locked; pause, skip, Done (for reps sets) and end from the notification
 - The screen stays on during a workout
