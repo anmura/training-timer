@@ -67,6 +67,9 @@ import com.trainingtimer.app.ui.PathIcon
 /** Full-screen alarm shown over the lock screen while [AlarmService] rings. */
 class AlarmActivity : ComponentActivity() {
 
+    /** Start was tapped: the alarm stops, but this screen must stay until the phone is unlocked. */
+    private var launching = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Repo.init(this)
@@ -84,7 +87,7 @@ class AlarmActivity : ComponentActivity() {
                 val data by Repo.state.collectAsStateWithLifecycle()
                 val r = ringing
                 // The alarm was stopped from the notification or timed out.
-                LaunchedEffect(r == null) { if (r == null) finish() }
+                LaunchedEffect(r == null) { if (r == null && !launching) finish() }
                 BackHandler { }
                 if (r != null) {
                     AlarmScreen(
@@ -109,31 +112,31 @@ class AlarmActivity : ComponentActivity() {
     }
 
     private fun start(r: Reminder) {
+        launching = true
         AlarmService.dismiss(this)
-        val open = {
-            val intent = Intent(this, MainActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            if (r.complexId != null && Repo.state.value.complexes.any { it.id == r.complexId }) {
-                intent.putExtra(MainActivity.EXTRA_START_COMPLEX, r.complexId)
-                intent.putExtra(MainActivity.EXTRA_REMINDER, r.id)
-            } else {
-                intent.putExtra(MainActivity.EXTRA_SHOW_COMPLEXES, true)
-            }
-            startActivity(intent)
-            finish()
+        // Open the app (and start the workout) right away. Over the lock screen it waits behind the
+        // fingerprint / PIN prompt and shows as soon as the phone is unlocked.
+        val intent = Intent(this, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        if (r.complexId != null && Repo.state.value.complexes.any { it.id == r.complexId }) {
+            intent.putExtra(MainActivity.EXTRA_START_COMPLEX, r.complexId)
+            intent.putExtra(MainActivity.EXTRA_REMINDER, r.id)
+        } else {
+            intent.putExtra(MainActivity.EXTRA_SHOW_COMPLEXES, true)
         }
+        startActivity(intent)
         val km = getSystemService(KeyguardManager::class.java)
         if (km != null && km.isKeyguardLocked) {
             km.requestDismissKeyguard(
                 this,
                 object : KeyguardManager.KeyguardDismissCallback() {
-                    override fun onDismissSucceeded() = open()
+                    override fun onDismissSucceeded() = finish()
                     override fun onDismissCancelled() = finish()
                     override fun onDismissError() = finish()
                 },
             )
         } else {
-            open()
+            finish()
         }
     }
 }
