@@ -363,6 +363,18 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
     var announcing by remember(s.index) { mutableStateOf(p.roundStart) }
     // The edge glow is a short flash, shorter than the rest of the announcement.
     // Only when a round is finished and the next one begins, not when a cycle starts.
+    // Breathing reminder (variant B2): a blue halo inside the timer and BREATHE instead of WORK / REPS.
+    var seenCue by remember { androidx.compose.runtime.mutableIntStateOf(s.breathCue) }
+    var breathing by remember { mutableStateOf(false) }
+    LaunchedEffect(s.breathCue) {
+        if (s.breathCue > seenCue) {
+            seenCue = s.breathCue
+            breathing = true
+            delay(2200)
+            breathing = false
+        }
+    }
+    val halo by animateFloatAsState(if (breathing && !s.paused) 1f else 0f, tween(if (breathing) 300 else 700), label = "breathHalo")
     var glow by remember(s.index) { mutableStateOf(p.roundStart && p.round > 1) }
     LaunchedEffect(s.index) {
         if (glow) {
@@ -453,7 +465,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 if (p.isReps) {
-                    RepsRing(s, repsRingSize, rounds)
+                    RepsRing(s, repsRingSize, rounds, halo)
                     p.weight?.let { WeightPill(it, p) }
                     // Variant D2: a Done pill between previous and skip.
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -479,6 +491,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                     size = ringSize,
                     stroke = 16.dp,
                 ) {
+                    BreathHalo(halo)
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             formatTime(s.remainingSec),
@@ -486,13 +499,7 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
                             fontSize = (ringSize.value * 0.33f).sp,
                             color = C.Text,
                         )
-                        Text(
-                            if (s.paused) "PAUSED" else "WORK",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 2.sp,
-                            color = if (s.paused) C.Orange else C.Lime,
-                        )
+                        RingLabel(if (s.paused) "PAUSED" else "WORK", if (s.paused) C.Orange else C.Lime, halo > 0.5f)
                     }
                 }
                 }
@@ -508,7 +515,6 @@ private fun WorkView(s: WorkoutState, onClose: () -> Unit) {
         NextCard(s)
     }
     EdgeGlow(glow)
-    BreathCue(s.breathCue)
     FullNameCard(p, visible = nameOpen, onClose = { nameOpen = false })
     }
 }
@@ -565,21 +571,16 @@ private fun FullNameCard(p: Phase, visible: Boolean, onClose: () -> Unit) {
 
 /** A reps set: no countdown, the target number of reps and a small stopwatch. */
 @Composable
-private fun RepsRing(s: WorkoutState, ringSize: Dp, rounds: RoundRingState?) {
+private fun RepsRing(s: WorkoutState, ringSize: Dp, rounds: RoundRingState?, halo: Float) {
     val size = ringSize
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
         WithRoundRing(rounds, size) {
         TimerRing(fraction = 0f, color = C.Sky, track = C.SkyTrack, size = size, stroke = 16.dp) {
+            BreathHalo(halo)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("DO", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp, color = C.Sky)
                 Text("${s.phase.reps ?: 0}", fontFamily = Condensed, fontSize = (size.value * 0.4f).sp, color = C.Text)
-                Text(
-                    if (s.paused) "PAUSED" else "REPS",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 2.sp,
-                    color = if (s.paused) C.Orange else C.Sky,
-                )
+                RingLabel(if (s.paused) "PAUSED" else "REPS", if (s.paused) C.Orange else C.Sky, halo > 0.5f)
             }
         }
         }
@@ -1005,41 +1006,35 @@ private fun EdgeGlow(on: Boolean) {
     }
 }
 
-/** "Breathe" reminder: pops up under the progress line and goes away by itself. */
+/** Soft blue glow inside the timer while a breathing reminder is shown. */
 @Composable
-private fun BreathCue(cue: Int) {
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(cue) {
-        if (cue > 0) {
-            visible = true
-            delay(2200)
-            visible = false
-        }
+private fun BreathHalo(alpha: Float) {
+    if (alpha <= 0f) return
+    Canvas(Modifier.fillMaxSize()) {
+        val r = size.minDimension / 2f
+        drawCircle(
+            androidx.compose.ui.graphics.Brush.radialGradient(
+                0f to C.Sky.copy(alpha = 0.30f * alpha),
+                0.6f to C.Sky.copy(alpha = 0.10f * alpha),
+                0.82f to C.Sky.copy(alpha = 0f),
+                center = center,
+                radius = r,
+            ),
+            radius = r,
+        )
     }
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 96.dp),
-        contentAlignment = Alignment.TopCenter,
-    ) {
-        androidx.compose.animation.AnimatedVisibility(
-            visible,
-            enter = fadeIn(tween(200)) + scaleIn(tween(260), initialScale = 0.6f),
-            exit = fadeOut(tween(500)),
-        ) {
-            Row(
-                Modifier
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(C.SkyTrack)
-                    .border(1.5.dp, C.Sky, RoundedCornerShape(24.dp))
-                    .padding(start = 14.dp, end = 18.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PathIcon(UiIcons.BREATH, C.Sky, size = 26.dp, strokeWidth = 2.2f)
-                Spacer(Modifier.width(10.dp))
-                Text("Breathe", fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = C.Sky)
-            }
+}
+
+/** WORK / REPS / PAUSED under the number; BREATHE with an icon during a breathing reminder. */
+@Composable
+private fun RingLabel(text: String, color: Color, breathe: Boolean) {
+    if (breathe) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            PathIcon(UiIcons.BREATH, C.Sky, size = 16.dp, strokeWidth = 2.4f)
+            Spacer(Modifier.width(6.dp))
+            Text("BREATHE", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp, color = C.Sky)
         }
+    } else {
+        Text(text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp, color = color)
     }
 }
