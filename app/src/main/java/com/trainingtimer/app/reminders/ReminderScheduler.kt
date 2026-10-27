@@ -41,7 +41,9 @@ object ReminderScheduler {
         val step = r.repeatMinutes.toLong().coerceAtLeast(1)
         if (r.untilMinute <= r.fromMinute) return null
         val base = if (r.anchor > 0) Instant.ofEpochMilli(r.anchor).atZone(ZoneId.systemDefault()).toLocalDateTime() else now
-        var cand = base.plusMinutes(step)
+        // Switched on (or last rang) before the window opens: the first ring is exactly at "from".
+        val baseStart = base.toLocalDate().atStartOfDay().plusMinutes(r.fromMinute.toLong())
+        var cand = if (base.isBefore(baseStart)) baseStart else base.plusMinutes(step)
         repeat(3000) {
             val date = cand.toLocalDate()
             val start = date.atStartOfDay().plusMinutes(r.fromMinute.toLong())

@@ -407,7 +407,7 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text("Interval", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
-                            Text("Counted from when you switch it on", fontSize = 13.sp, color = C.Muted)
+                            Text("First ring at “From”, then every step", fontSize = 13.sp, color = C.Muted)
                         }
                         Stepper(
                             text = intervalLabel(every).removePrefix("Every "),
@@ -477,7 +477,8 @@ fun ReminderEditorScreen(existing: Reminder?, data: AppData, onClose: () -> Unit
                             Text("${today.size} times today", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = C.Lime)
                         }
                         Text(
-                            "Counted from now. Nothing at or after ${minuteLabel(until)}. Next days start at ${minuteLabel(from)}. " +
+                            "Each day starts with a ring at ${minuteLabel(from)}; switched on later, the step counts from now. " +
+                                "Nothing at or after ${minuteLabel(until)}. " +
                                 "After a workout started from this reminder (or a snooze), the step starts again when it ends.",
                             fontSize = 12.sp,
                             color = C.Muted,
