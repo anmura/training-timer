@@ -50,6 +50,7 @@ object Repo {
         installAssetProgram("program_climbing_v1", "program_climbing.json")
         installAssetProgram("program_classic_v1", "program_classic.json")
         applyCategoryMap("categories_v2", "categories_v2.json")
+        installAssetProgram("program_stretch3_v1", "program_stretch3.json")
     }
 
     /**
