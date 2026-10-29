@@ -344,7 +344,8 @@ object WorkoutEngine {
             .setMaxStreams(2)
             .setAudioAttributes(
                 android.media.AudioAttributes.Builder()
-                    .setUsage(android.media.AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                    // Media volume, like the beeps (notification volume is often low or off).
+                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
                     .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build(),
             )
