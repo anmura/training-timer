@@ -144,6 +144,8 @@ On first launch the app adds:
 - **Climbing:** fingerboard hangs (open and half-crimp grip, 7/3 repeaters), lock-offs, Frenchies, offset pull-ups, toes to bar, hollow body, Y-T-W, finger extensions, band pull-aparts and external rotations, frog stretch — in a *Скалолазание* category, with a *Фингерборд* equipment item
 - **Classics:** burpees, jumping jacks, high knees, mountain climbers, jump rope, planks and side planks, crunches, bicycle, Russian twist, flutter kicks, superman, dead bug, bird-dog, lunges, sumo squats, wall sit, calf raises, step-ups, push-up variations, bench dips, dumbbell and kettlebell basics (weighted) — with a *Кардио* category
 - **Растяжка** complex: 51 stretches in order (≈32 min, 30 s each, 5 s rest), with new ones — child's pose, thread the needle, happy baby, cross-body arm, triceps, shin and toe stretches, ankle circles, legs up the wall
+- **Скалолазание: сила** (≈32 min + rep sets): joint warm-up and scapular pull-ups, fingerboard hangs 5×10 s, a pulling cycle (pull-ups, 90° lock-offs, toes to bar) ×3, an antagonist cycle (push-ups, band pull-aparts, external rotations, finger extensions) ×3 and a core cycle (hollow body, Y-T-W, side planks) ×2
+- **Скалолазание: заминка** (≈15 min): forearm and wrist stretches, chest, cross-body and triceps, child's pose and thread the needle for the lats and upper back, frog, pigeon, hip-flexor lunge, forward fold, neck, legs up the wall
 - **Pull-ups:** wide, close, chin-up, neutral grip, inverted (Australian), negative, band-assisted, dead hang, scapular, L-sit, archer and weighted
 - **Complexes:** five base workouts that show every feature — single exercises, several cycles, repeats and per-cycle rest:
 
