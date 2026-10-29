@@ -54,6 +54,7 @@ object Repo {
         installAssetProgram("program_climb_sessions_v1", "program_climb_sessions.json")
         installAssetProgram("program_morning_office_v1", "program_morning_office.json")
         installAssetProgram("program_wrists_strength_v1", "program_wrists_strength.json")
+        installAssetProgram("program_work_run_v1", "program_work_run.json")
     }
 
     /**

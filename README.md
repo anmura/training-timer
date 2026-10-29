@@ -148,6 +148,9 @@ On first launch the app adds:
 - **Скалолазание: заминка** (≈15 min): forearm and wrist stretches, chest, cross-body and triceps, child's pose and thread the needle for the lats and upper back, frog, pigeon, hip-flexor lunge, forward fold, neck, legs up the wall
 - **Зарядка: офис, бег, скалы** (≈13 min + 3 rep sets): neck and chin tucks, thoracic mobility (cat–cow, thoracic extension, thread the needle), shoulder opening (band dislocates, wall slides, band pull-aparts, Y-T-W, chest stretches at two heights), then hips, leg swings, ankles and glute bridges for running
 - **Запястья: сила**: warm-up and stretch, then 3 rounds of wrist curls and extensions, bar rotations and radial/ulnar tilts, 2 rounds of finger rolls and band finger extensions, and a stretch to finish
+- **Разминка на работе** (≈8 min + rep sets): neck, joints, a hang and scapular pull-ups on the wall bars, inverted rows and dips, goblet squats and Romanian deadlifts with dumbbells, shoulder and hip-flexor stretches
+- **Бег: сила ног**: 3 rounds of goblet squats, reverse lunges, Romanian deadlifts, single-leg bridges and calf raises; 2 rounds of band side steps, single-leg balance, eccentric calf raises and side planks
+- **Бег: заминка** (≈15 min): calves, quads, hamstrings, hip flexors, pigeon, butterfly, forward fold, twists, shins, happy baby, legs up the wall
 - **Pull-ups:** wide, close, chin-up, neutral grip, inverted (Australian), negative, band-assisted, dead hang, scapular, L-sit, archer and weighted
 - **Complexes:** five base workouts that show every feature — single exercises, several cycles, repeats and per-cycle rest:
 
