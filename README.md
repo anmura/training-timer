@@ -146,6 +146,7 @@ On first launch the app adds:
 - **Растяжка** complex: 51 stretches in order (≈32 min, 30 s each, 5 s rest), with new ones — child's pose, thread the needle, happy baby, cross-body arm, triceps, shin and toe stretches, ankle circles, legs up the wall
 - **Скалолазание: сила** (≈32 min + rep sets): joint warm-up and scapular pull-ups, fingerboard hangs 5×10 s, a pulling cycle (pull-ups, 90° lock-offs, toes to bar) ×3, an antagonist cycle (push-ups, band pull-aparts, external rotations, finger extensions) ×3 and a core cycle (hollow body, Y-T-W, side planks) ×2
 - **Скалолазание: заминка** (≈15 min): forearm and wrist stretches, chest, cross-body and triceps, child's pose and thread the needle for the lats and upper back, frog, pigeon, hip-flexor lunge, forward fold, neck, legs up the wall
+- **Зарядка: офис, бег, скалы** (≈13 min + 3 rep sets): neck and chin tucks, thoracic mobility (cat–cow, thoracic extension, thread the needle), shoulder opening (band dislocates, wall slides, band pull-aparts, Y-T-W, chest stretches at two heights), then hips, leg swings, ankles and glute bridges for running
 - **Pull-ups:** wide, close, chin-up, neutral grip, inverted (Australian), negative, band-assisted, dead hang, scapular, L-sit, archer and weighted
 - **Complexes:** five base workouts that show every feature — single exercises, several cycles, repeats and per-cycle rest:
 
