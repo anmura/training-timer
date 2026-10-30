@@ -55,6 +55,7 @@ object Repo {
         installAssetProgram("program_morning_office_v1", "program_morning_office.json")
         installAssetProgram("program_wrists_strength_v1", "program_wrists_strength.json")
         installAssetProgram("program_work_run_v1", "program_work_run.json")
+        splitSides("sides_v1", "sides_v1.json")
     }
 
     /**
@@ -238,6 +239,54 @@ object Repo {
             ImportExport.importJson(text)
         } catch (e: Exception) {
             // Keep going without it.
+        }
+        prefs.edit().putBoolean(flag, true).apply()
+    }
+
+    /**
+     * Once: exercises done on one side get a right and a left version. Every step that used the
+     * two-sided exercise becomes two steps (right, then left) with the same time or reps; the old
+     * exercise is then removed from the library.
+     */
+    private fun splitSides(flag: String, asset: String) {
+        val prefs = context.getSharedPreferences("app", Context.MODE_PRIVATE)
+        if (prefs.getBoolean(flag, false)) return
+        try {
+            val arr = JSONObject(context.assets.open(asset).bufferedReader().use { it.readText() }).getJSONArray("pairs")
+            update { d0 ->
+                var d = d0
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    val generic = d.exercises.find { it.name.trim().equals(o.getString("generic"), ignoreCase = true) } ?: continue
+                    val exercises = d.exercises.toMutableList()
+                    fun sided(name: String): Exercise =
+                        exercises.find { it.name.trim().equals(name, ignoreCase = true) }
+                            ?: generic.copy(id = newId(), name = name).also { exercises += it }
+                    val right = sided(o.getString("right"))
+                    val left = sided(o.getString("left"))
+                    fun split(steps: List<Step>): List<Step> = steps.flatMap { st ->
+                        if (st.exerciseId == generic.id) {
+                            listOf(st.copy(exerciseId = right.id, key = newId()), st.copy(exerciseId = left.id, key = newId()))
+                        } else {
+                            listOf(st)
+                        }
+                    }
+                    val complexes = d.complexes.map { c ->
+                        c.copy(
+                            items = c.items.flatMap { item ->
+                                when (item) {
+                                    is ComplexItem.Single -> split(listOf(item.step)).map { ComplexItem.Single(it) }
+                                    is ComplexItem.Cycle -> listOf(item.copy(steps = split(item.steps)))
+                                }
+                            },
+                        )
+                    }
+                    d = d.copy(exercises = exercises.filter { it.id != generic.id }, complexes = complexes)
+                }
+                d
+            }
+        } catch (e: Exception) {
+            // Leave the library as it is.
         }
         prefs.edit().putBoolean(flag, true).apply()
     }

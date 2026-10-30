@@ -137,6 +137,8 @@ The app has no internet permission.
 
 ## Built-in content
 
+One-sided exercises always come as a right and a left version (e.g. *Голубь, правая нога* and *Голубь, левая нога*), and complexes do them one after the other, so each side gets the same time.
+
 On first launch the app adds:
 
 - **Categories:** Мобильность (mobility), Силовые (strength), Растяжка (stretching)
