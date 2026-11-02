@@ -283,10 +283,11 @@ private fun ComplexesTab(
 ) {
     var toDelete by remember { mutableStateOf<Complex?>(null) }
     val exById = remember(data.exercises) { data.exercises.associateBy { it.id } }
+    val scroll = rememberScrollState()
     Column(
         Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scroll)
             .padding(start = 16.dp, end = 16.dp, bottom = 100.dp),
     ) {
         TabHeader("Your training", "Complexes") {
@@ -311,6 +312,7 @@ private fun ComplexesTab(
             keyOf = { it.id },
             onMove = { from, to -> Repo.moveComplex(from, to) },
             spacing = 12.dp,
+            scrollState = scroll,
         ) { c, _, handle ->
             ComplexCard(
                 complex = c,

@@ -360,6 +360,7 @@ private fun BuilderStep(
                 items = draft.items,
                 keyOf = { it.key },
                 onMove = { from, to -> draft.moveIndex(from, to) },
+                scrollState = scrollState,
             ) { item, _, handle ->
                 when (item) {
                     is ComplexItem.Single -> SingleRow(
