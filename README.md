@@ -1,117 +1,159 @@
 # Training Timer
 
-An offline workout timer for Android: build workouts from your own exercises, time them or count reps, add weights, repeat them in cycles, and get reminded when it's time to train.
+An offline workout timer for Android, made for an office worker who runs and climbs. Build workouts from your own exercise library, time them or count reps, add weights, repeat them in cycles, see the equipment you need, and get reminded when it's time to train or to breathe.
 
 ![Training Timer screens](docs/screenshots/banner.png)
 
-Build a workout ("complex") from your own exercise library. Give each exercise a time or a number of reps (and a weight if it uses one), group exercises into cycles that repeat several rounds, and choose how long to rest between them. Press **Start** and the app guides you through the whole session: a big countdown for timed sets, a **Done** button for reps sets, the next exercise shown during every rest, beeps and vibration at each switch, and controls on the lock screen. Set reminders as a notification or a full-screen alarm so you don't skip a day.
-
 No account, no ads, no internet connection. All data stays on the phone.
 
-> The screenshots in this README are taken from the app's design mockups, so some details and texts differ slightly from the current build.
+> The pictures in this README come from the app's design mockups (in the project's design canvas). Exercise names and numbers are examples, and small details can differ from the current build.
 
-## Features
+## Contents
 
-**Exercise library**
-- Exercises with a name (up to 60 characters) and an icon: 75+ built-in line icons in one style
-- Categories with colours; an exercise can belong to several categories or to none
-- Filter chips and a grouped list by category, plus search
-- **Equipment** (dumbbells, mat, pull-up bar…) with its own icons: an exercise shows only the equipment and categories it has, as a short list; **Add** opens the full list with search and *New equipment* / *New category*
-- Tap equipment in an exercise to edit it: name, icon and every exercise that uses it
-- Complex cards show the equipment they need (*3 items needed*); **Start** opens an overview — total time, sets, cycles, the equipment you'll need and every exercise — with **Start workout**
-- Filter the library (and the exercise pickers in the complex editor) by equipment as well as by category; each exercise shows small icons of its equipment
-- Settings › Library: manage categories (name, colour, order) and equipment (name, icon)
-- Ready-made exercises for mobility, strength, stretching and wrists, plus 12 pull-up variations
-- An exercise can be marked **Uses weight** (dumbbells, kettlebell, barbell)
+- [Exercise library](#exercise-library) — exercises, categories, equipment, search and filters, left and right sides, built-in library
+- [Complexes](#complexes) — builder, cycles, weights, cards, overview before the start, built-in complexes
+- [Workout](#workout) — timer, progress line, rounds, reps sets, rest, breathing reminders, signals, finish
+- [Reminders](#reminders) — at a time or repeating, full-screen alarm
+- [Settings](#settings), [Import and export](#import-and-export)
+- [Install](#install), [Built-in content](#built-in-content), [Import file format](#import-file-format), [Build](#build)
 
-**Complex builder**
-- Pick exercises with checkboxes (with search and category filters), then set the time of each one (−/+ in 5-second steps, or tap the time to type it)
-- Switch any exercise between **Time** and **Reps**: a reps set has a target count (for example ×12) instead of a timer
-- Cycles: a group of exercises repeated N rounds, with its own optional rest between exercises
-- One rest time for the whole complex; no rest is added after the last exercise
-- Hold and drag to reorder exercises, cycles and complexes
-- Exercise menu: **Move into new cycle**, move into an existing cycle, move out of a cycle, **Remove from complex**
-- Cycle menu: **Copy cycle** (same exercises, rounds and rest, placed right below) and Remove cycle
-- Long exercise names are shown in full; the Time / Reps switch and the value sit on their own line
-- The total workout time is calculated live (rep sets are shown separately, since they take as long as you need)
+## Exercise library
 
-**Workout**
-- Optional "get ready" countdown before the first exercise (0–15 s, set in Settings)
-- Large timer ring with the full exercise name, progress line and time left
-- The timer has the same size and place for every set of a workout: the name gets a fixed three-line block (long names use a smaller font), and room is kept only for the round ring, weight and reps controls the workout actually uses
-- Names too long for three lines show a ⌄ button: tap the name to read it in full in a card over the timer, tap again to close
-- **Progress line with cycles**: every set is a segment, cycles sit on their own band and rounds are spaced apart; the current set is white. In big complexes the block you are in keeps per-set detail and takes at least half the line, while other cycles shrink to one segment per round (or per cycle)
-- In a cycle: a **round ring** around the timer with one segment per round (the current round is white) and a *2/3* badge in the header
-- **New round** animation: the screen edges glow lime, the next segment draws in with a glow, *Round 2 of 3* appears on the timer, the badge flashes, and a distinct triple beep and buzz play
-- Reps sets show the target count and a small stopwatch; tap the big **Done** button when you finish and the next rest starts
-- Rest screen with the next exercise shown large and the two after it (with reps and weight)
-- Pause, skip, previous and +10 s
-- **Breathing reminders** (Settings, off by default): during exercises the timer gets a soft blue glow and *WORK* turns into *BREATHE* for two seconds, with a soft sound and a short buzz, every N seconds of exercise time (10–180 s; rests don't count)
-- Beeps in the last 3 seconds and at every switch, vibration on each switch (both can be turned off)
-- Keeps running with the screen locked; pause, skip, Done (for reps sets) and end from the notification
-- The screen stays on during a workout
+### Exercises
+Each exercise has a name (up to 60 characters) and an icon: 90+ line icons in one style, or a picture from the gallery. The **Exercises** tab lists them grouped by category, with small icons of the equipment each one needs. Tap one to edit it; the ⋮ menu edits or deletes it. **+** adds a new one; the round buttons at the top open import/export and Settings.
 
-**Weights**
-- Mark an exercise as **Uses weight** in its settings; choose kg or lb in Settings
-- Set the weight in the complex: one weight, or in a cycle a weight **per round**
-- Per round: **Fill all rounds** from a start weight and a step per round (e.g. 10 kg, +2 kg); the button shows the result before you tap it. Then change any round by hand; edited rounds are marked
-- A cycle can mix weighted and bodyweight exercises; each weighted exercise has its own Same / Per round setting, and per-round weights fold into one line until you tap Edit
-- Tap any weight to type it (decimals allowed); − / + change it by 1 kg or 2.5 lb
-- During the workout the planned weight is shown with the set, in the Next card, on the rest screen and in the notification; it is not changed there
+| <img src="docs/screenshots/exercises.png" width="240"> | <img src="docs/screenshots/exercise-editor.png" width="240"> |
+|---|---|
 
-**Reminders**
-- Settings › Reminders: any number of reminders, each with a time and repeat days (every day, weekdays, chosen days, or once)
-- Remind about a specific workout (start it right from the reminder) or just "time to train" with your own message
-- **Notification:** a banner with Start (or Choose workout) and Snooze
-- **Alarm:** rings full screen over the lock screen, even in silent mode, with your chosen sound; Start workout, Snooze (5–30 min) or Dismiss. If nobody reacts in 5 minutes it snoozes itself
-- **Repeat** mode: remind every X (15 min – 6 h) between two times, e.g. every 2 h from 09:00 to 18:00 on weekdays. Rings sit on a grid from *From* (e.g. 23:00, 23:15, 23:30 …), also when you switch it on in the middle of the window; nothing rings at or after *Until*. Start or Snooze on a repeating reminder restarts the step when the workout ends, and the finish screen shows when the next one comes
-- Repeating reminders have **Show times**: the next ring and how many are left today; open it to see today's times (done ones struck through, the next one highlighted) and the next day's
-- One-time reminders switch themselves off after they ring; everything is set again after a reboot, an app update or a clock change
-- Complex cards on the home screen show their reminder, for example *Mon, Wed, Fri · 07:30*
+### Categories
+Colour-coded groups such as Мобильность, Силовые, Растяжка, Кардио and Скалолазание. An exercise can be in several categories or none. In the exercise editor the chosen categories are a short list; **Edit** opens all categories with a search and **New category**. Rename, recolour, reorder (hold ⠿ and drag) and delete them in **Settings › Categories** — deleting keeps the exercises.
 
-**Import and export**
-- Import exercises and complexes from a JSON file; existing names are skipped and a summary lists what was added, skipped or not readable
-- Exercises a complex needs but your library doesn't have are created with a "?" icon
-- Names longer than 60 characters are shortened
-- Export all exercises, one complex, all complexes, or a full backup
+| <img src="docs/screenshots/pick-categories.png" width="240"> | <img src="docs/screenshots/settings-categories.png" width="240"> |
+|---|---|
 
-## Screenshots
+### Equipment
+Dumbbells, a mat, a pull-up bar, a fingerboard… each with its own icon (17 to choose from). In the exercise editor the exercise's equipment is a short list; **Edit** opens all equipment with a search and **New equipment** (name + icon). Tap an item to edit it: name, icon and every exercise that uses it — tap one to open it. **Settings › Equipment** lists everything with the number of exercises.
 
-| Complexes | Exercise library | New exercise |
+| <img src="docs/screenshots/pick-equipment.png" width="240"> | <img src="docs/screenshots/new-equipment.png" width="240"> | <img src="docs/screenshots/edit-equipment.png" width="240"> |
 |---|---|---|
-| <img src="docs/screenshots/01-complexes.png" width="240"> | <img src="docs/screenshots/02-exercises.png" width="240"> | <img src="docs/screenshots/03-new-exercise.png" width="240"> |
 
-| Pick exercises | Complex builder | Add a cycle |
-|---|---|---|
-| <img src="docs/screenshots/04-pick-exercises.png" width="240"> | <img src="docs/screenshots/05-complex-builder.png" width="240"> | <img src="docs/screenshots/06-add-cycle.png" width="240"> |
+### Search and filters
+Search by any part of the name, then narrow down by category and by equipment — two chip rows that work together (the chips show counts; tap a selected chip again or its ✕ to clear it). The same search and filters are in every exercise picker of the complex editor.
 
-| Exercise menu | Workout: timed set | Workout: reps set |
-|---|---|---|
-| <img src="docs/screenshots/14-time-or-reps.png" width="240"> | <img src="docs/screenshots/07-workout.png" width="240"> | <img src="docs/screenshots/15-reps-set.png" width="240"> |
+| <img src="docs/screenshots/exercises-filtered.png" width="240"> | <img src="docs/screenshots/pick-exercises.png" width="240"> |
+|---|---|
 
-| Many rounds | Rest and next exercise | Import / export |
-|---|---|---|
-| <img src="docs/screenshots/25-many-rounds.png" width="240"> | <img src="docs/screenshots/08-rest.png" width="240"> | <img src="docs/screenshots/09-import-export.png" width="240"> |
+### Left and right
+Exercises done on one side always come as two: a right and a left version (*Голубь, правая нога* / *Голубь, левая нога*). Complexes do them one after the other, so each side gets the same time and you never have to switch sides yourself.
 
-| Uses weight | Weight per round | Mixed cycle |
-|---|---|---|
-| <img src="docs/screenshots/21-weight-exercise.png" width="240"> | <img src="docs/screenshots/22-weight-per-round.png" width="240"> | <img src="docs/screenshots/23-weight-mixed-cycle.png" width="240"> |
+### Uses weight
+Mark exercises done with dumbbells, a kettlebell or a barbell as **Uses weight**; complexes then get a weight field for them.
 
-| Weight in the workout | Settings | Import result |
-|---|---|---|
-| <img src="docs/screenshots/24-weight-workout.png" width="240"> | <img src="docs/screenshots/16-settings.png" width="240"> | <img src="docs/screenshots/10-import-result.png" width="240"> |
+## Complexes
 
-| Categories | Exercise categories | Manage categories |
-|---|---|---|
-| <img src="docs/screenshots/11-categories.png" width="240"> | <img src="docs/screenshots/12-exercise-categories.png" width="240"> | <img src="docs/screenshots/13-manage-categories.png" width="240"> |
+### Building a complex
+1. **Create complex** › pick exercises (search, category and equipment filters; the order you tick them is the order they run).
+2. Set each one to **Time** (−/+ in 5-second steps, or tap to type) or **Reps** (a target count like ×12).
+3. Set the rest between exercises. Hold ⠿ and drag to reorder; when you drag near the top or bottom edge the page scrolls by itself.
 
-| Reminders | New reminder | Notification |
-|---|---|---|
-| <img src="docs/screenshots/17-reminders.png" width="240"> | <img src="docs/screenshots/18-new-reminder.png" width="240"> | <img src="docs/screenshots/19-reminder-notification.png" width="240"> |
+The exercise menu has **Move into new cycle**, move into an existing cycle, move out of a cycle and **Remove from complex**. The total time updates live (reps sets are counted separately — they take as long as you need).
 
-| Alarm |
+### Cycles
+A group of exercises repeated N rounds, with its own optional rest. The cycle menu has **Copy cycle** (same exercises, rounds and rest, right below) and **Remove cycle**.
+
+### Weights
+Set one weight for a set, or in a cycle a weight **per round**. **Fill all rounds** fills them from a start weight and a step (e.g. 10 kg, +2 kg); then change any round by hand. A cycle can mix weighted and bodyweight exercises. kg or lb is chosen in Settings.
+
+| <img src="docs/screenshots/builder-weights.png" width="240"> | <img src="docs/screenshots/builder-mixed-cycle.png" width="240"> |
+|---|---|
+
+### Complex cards
+The **Complexes** tab shows each complex with its total time, its exercises as icons, a stack of the equipment it needs (*3 items needed*) and its reminder. Hold and drag cards to reorder them.
+
+### Overview before the start
+**Start** opens the complex first: total time, number of sets and cycles, **You'll need** — every piece of equipment with how many exercises use it — and all exercises in order with their time or reps. **Start workout** begins; the pencil edits the complex.
+
+| <img src="docs/screenshots/complexes.png" width="240"> | <img src="docs/screenshots/complex-overview.png" width="240"> |
+|---|---|
+
+## Workout
+
+### The timer
+A large ring counts down each timed set. The exercise icon and name sit on the left in a fixed three-line block, so the timer keeps one size and place for the whole workout; it only leaves room for the round ring, weight and reps controls the workout actually uses. Names longer than three lines show a ⌄ — tap the name to read it in full in a card over the timer, tap again to close. The **Next** card at the bottom shows what comes after the rest.
+
+| <img src="docs/screenshots/workout-timed.png" width="240"> | <img src="docs/screenshots/long-name.png" width="240"> |
+|---|---|
+
+### Progress line with cycles
+Every set is a segment; cycles sit on their own band and their rounds are spaced apart; the current set is white. In big complexes the block you're in keeps per-set detail and takes at least half the line, while other cycles shrink to one segment per round (or per cycle).
+
+### Rounds
+In a cycle a **round ring** around the timer has one segment per round — done rounds lime, the current one white — and a *2/4* badge sits in the header. When a new round starts the next segment draws in, *Round 2 of 4* appears on the timer, the badge flashes, the screen edges glow lime for a moment, and a distinct triple beep and buzz play (only between rounds, not when a cycle starts).
+
+| <img src="docs/screenshots/new-round.png" width="240"> |
 |---|
-| <img src="docs/screenshots/20-alarm.png" width="240"> |
+
+### Reps sets and weights
+A reps set shows the target count and a small stopwatch; tap **Done** (between previous and skip) when you finish. A weighted set shows its planned weight (and the round), also in the Next card, on the rest screen and in the notification.
+
+| <img src="docs/screenshots/workout-reps.png" width="240"> | <img src="docs/screenshots/workout-weight.png" width="240"> |
+|---|---|
+
+### Rest
+The rest screen counts down in orange and shows the next exercise large — with its own time or reps — then the two after it. **+10 s** extends the rest (the ring follows), **Skip** ends it.
+
+### Breathing reminders
+Optional (Settings). During exercises — not rests — every N seconds (10–180 s) the timer gets a soft blue glow and *WORK* turns into *BREATHE* for two seconds, with the sound of a wave rolling in and out and a buzz that swells and fades.
+
+| <img src="docs/screenshots/rest.png" width="240"> | <img src="docs/screenshots/breathe.png" width="240"> |
+|---|---|
+
+### Signals and the lock screen
+Optional "get ready" countdown before the first exercise (0–15 s). Beeps in the last 3 seconds and at every switch, vibration on each switch (both can be turned off; beeps follow the media volume). The timer keeps running with the screen locked, and pause, skip, Done and end are in the notification. The screen stays on during a workout. Pause, previous and skip are always on the screen.
+
+### Finish
+The finish screen shows the real time and the number of sets. If the workout came from a repeating reminder, it also says when the next reminder will ring.
+
+| <img src="docs/screenshots/done.png" width="240"> |
+|---|
+
+## Reminders
+
+### At a time
+Any number of reminders, each with a time and days (every day, weekdays, chosen days, or once). Remind about a specific complex — start it right from the reminder — or just send a "time to train" nudge with your own message. **Notification**: a banner with Start and Snooze. **Alarm**: rings full screen over the lock screen, even in silent mode, with your chosen sound; Start workout, Snooze (5–30 min) or Dismiss; if nobody reacts in 5 minutes it snoozes itself. One-time reminders switch themselves off after they ring.
+
+### Repeat every X between two times
+Choose **Repeat**, an interval (15 min – 6 h, with quick picks) and **From** / **Until**, e.g. every 2 h from 09:00 to 18:00 on weekdays. Rings sit on a grid from *From* (09:00, 11:00, 13:00 …), also when you switch it on in the middle of the window; nothing rings at or after *Until*. The editor previews today's times. Start or Snooze on a repeating reminder restarts the step when the workout (or the snooze) ends.
+
+| <img src="docs/screenshots/reminder-repeat.png" width="240"> | <img src="docs/screenshots/reminders.png" width="240"> | <img src="docs/screenshots/reminder-times.png" width="240"> |
+|---|---|---|
+
+### Show times
+A repeating reminder's card shows the next ring and how many are left today; **Show times** opens today's times (done ones struck through, the next one in lime) and the next day's.
+
+### Full-screen alarm
+The alarm shows over the lock screen. **Start workout** starts the workout straight away — even while the phone asks for your fingerprint, so it's running when you unlock. Alarms are set again after a reboot, an app update or a clock change.
+
+| <img src="docs/screenshots/alarm.png" width="240"> | <img src="docs/screenshots/reminder-notification.png" width="240"> |
+|---|---|
+
+## Settings
+
+- **Library:** Categories and Equipment
+- **Reminders**
+- **Workout start:** countdown before the first exercise
+- **Units:** kg or lb
+- **Workout signals:** beeps, vibration, breathing reminders and how often
+
+| <img src="docs/screenshots/settings.png" width="240"> | <img src="docs/screenshots/settings-equipment.png" width="240"> |
+|---|---|
+
+## Import and export
+
+Import exercises, categories, equipment and complexes from a JSON file; names that already exist are skipped and a summary lists what was added, skipped or not readable. Exercises a complex needs but your library doesn't have are created with a "?" icon. Export all exercises, one complex, all complexes, or a full backup. The format is below.
+
+| <img src="docs/screenshots/import-export.png" width="240"> | <img src="docs/screenshots/import-result.png" width="240"> |
+|---|---|
 
 ## Install
 
@@ -174,10 +216,13 @@ The built-in programs live in [`app/src/main/assets`](app/src/main/assets) and u
   "categories": [
     { "name": "Растяжка", "color": "#C49BFF" }
   ],
+  "equipment": [
+    { "name": "Гантели", "icon": "dumbbell" }
+  ],
   "exercises": [
     { "name": "Burpees", "icon": "jump", "categories": ["Силовые"] },
     { "name": "Side plank", "icon": "plank" },
-    { "name": "Goblet squat", "icon": "squat", "usesWeight": true }
+    { "name": "Goblet squat", "icon": "squat", "usesWeight": true, "equipment": ["Гантели"] }
   ],
   "complexes": [
     {
@@ -206,7 +251,9 @@ The built-in programs live in [`app/src/main/assets`](app/src/main/assets) and u
 - Exercises and complexes whose names already exist are skipped.
 - Reminders are not part of export files: they belong to the phone they were set on.
 
-Icon names: `plank pushup squat jump jacks run lunge stretch dumbbell kettlebell rope abs bike timer heart wallslide facepull dislocate handslock chestwall chestwallhigh thoracic pullup dips pistol legraise wristcurl wristext bartilt sidetwist kneeschest hamstring pigeon butterfly forearm neck shoulderroll armcircles elbowcircles wristcircles hipcircles kneecircles catcow glutebridge pike abwheel sidelunge forwardfold scapula cobra legswing legreach sidebend calf quad lyingquad neckside neckforward scm bartiltfwd bartiltback barrotate fingerroll pullupwide pullupclose chinup pullupneutral invertedrow pullupneg pullupband deadhang scappull lsitpull archerpull pullupweight unknown`
+Exercise icon names: `plank pushup squat jump jacks run lunge stretch dumbbell kettlebell rope abs bike timer heart wallslide facepull dislocate handslock chestwall chestwallhigh thoracic pullup dips pistol legraise wristcurl wristext bartilt sidetwist kneeschest hamstring pigeon butterfly forearm neck shoulderroll armcircles elbowcircles wristcircles hipcircles kneecircles catcow glutebridge pike sidelunge forwardfold scapula cobra legswing legreach sidebend calf quad lyingquad neckside neckforward scm bartiltfwd bartiltback barrotate fingerroll pullupwide pullupclose chinup pullupneutral invertedrow pullupneg pullupband deadhang scappull lsitpull archerpull pullupweight hangboard hanglegraise hangkneeraise toestobar armswing lockoff hollow ytw fingerext anklecircles childpose threadneedle shin toesit happybaby triceps legswall unknown abwheel`
+
+Equipment icon names: `dumbbell kettlebell mat band bar bench wheel rope barbell roller box rings parallel stick ball chair fingerboard`
 
 ## Project structure
 
@@ -215,7 +262,7 @@ Kotlin and Jetpack Compose, no third-party libraries beyond AndroidX.
 ```
 app/src/main/java/com/trainingtimer/app/
 ├── data/       models, JSON storage (Repo), import/export, icon definitions
-├── ui/         screens: home, exercise and complex editors (incl. weights), workout, settings, categories, reminders
+├── ui/         screens: home, library (categories, equipment), exercise and complex editors, overview, workout, settings, reminders
 ├── workout/    workout engine (timing, beeps, vibration) and the foreground service
 └── reminders/  scheduling (AlarmManager), notification, alarm service and full-screen alarm screen
 app/src/main/assets/    built-in exercises and complexes
