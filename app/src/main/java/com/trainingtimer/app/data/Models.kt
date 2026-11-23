@@ -108,7 +108,22 @@ data class Settings(
     val breathReminders: Boolean = false,
     /** How often, in seconds of exercise time. */
     val breathEvery: Int = 30,
+    /** Id of the breathing sound, see [BreathSounds]. */
+    val breathSound: String = BreathSounds.DEFAULT,
 )
+
+/** Sounds for the breathing reminder. Wind is the default. */
+object BreathSounds {
+    const val DEFAULT = "wind"
+    data class Sound(val id: String, val name: String, val description: String, val res: Int)
+    val all = listOf(
+        Sound("wind", "Wind", "A gust that swells and fades, like a breath", com.trainingtimer.app.R.raw.breath_wind),
+        Sound("surf", "Waves", "A wave rolling in and out", com.trainingtimer.app.R.raw.breath_surf),
+        Sound("glass", "Glass bell", "One clear chime with a long fade", com.trainingtimer.app.R.raw.breath_glass),
+        Sound("bird", "Bird", "A couple of short chirps", com.trainingtimer.app.R.raw.breath_bird),
+    )
+    fun of(id: String): Sound = all.firstOrNull { it.id == id } ?: all[0]
+}
 
 const val BREATH_MIN = 10
 const val BREATH_MAX = 180

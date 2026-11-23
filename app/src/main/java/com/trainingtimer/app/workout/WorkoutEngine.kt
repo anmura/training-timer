@@ -10,6 +10,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.content.ContextCompat
+import com.trainingtimer.app.data.BreathSounds
 import com.trainingtimer.app.data.Complex
 import com.trainingtimer.app.data.flatten
 import com.trainingtimer.app.data.Exercise
@@ -117,9 +118,11 @@ object WorkoutEngine {
     private var pausedTotal = 0L
     private var lastBeepSecond = -1
     private var tone: ToneGenerator? = null
-    /** The breathing cue: the sound of a wave rolling in and out (noise only, no tones). */
+    /** Breathing cues, loaded once: sound id -> SoundPool id. The one played is chosen in Settings. */
     private var sounds: android.media.SoundPool? = null
-    private var breathSound = 0
+    private val breathSounds = HashMap<String, Int>()
+    /** Plays a breathing sound once, for the choice in Settings. */
+    private var preview: android.media.MediaPlayer? = null
     /** Exercise time since the last breathing reminder. */
     private var breathAcc = 0L
     private var lastTickAt = 0L
@@ -273,7 +276,8 @@ object WorkoutEngine {
         breathAcc = 0L
         if (settings.beeps) {
             val pool = sounds
-            if (pool != null && breathSound != 0) pool.play(breathSound, 1f, 1f, 1, 0, 1f)
+            val id = breathSounds[settings.breathSound] ?: breathSounds[BreathSounds.DEFAULT] ?: 0
+            if (pool != null && id != 0) pool.play(id, 1f, 1f, 1, 0, 1f)
             else toneGenerator()?.startTone(ToneGenerator.TONE_PROP_PROMPT, 140)
         }
         // A slow swell and fade, like a breath, instead of a sharp buzz.
@@ -350,12 +354,32 @@ object WorkoutEngine {
                     .build(),
             )
             .build()
-        breathSound = try {
-            pool.load(ctx, com.trainingtimer.app.R.raw.breath, 1)
-        } catch (e: Exception) {
-            0
+        for (snd in BreathSounds.all) {
+            breathSounds[snd.id] = try {
+                pool.load(ctx, snd.res, 1)
+            } catch (e: Exception) {
+                0
+            }
         }
         sounds = pool
+    }
+
+    /** Plays the breathing sound [id] once at media volume (Settings preview). */
+    fun previewBreath(context: Context, id: String) {
+        try {
+            preview?.release()
+            val attrs = android.media.AudioAttributes.Builder()
+                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+            val am = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+            val mp = android.media.MediaPlayer.create(context.applicationContext, BreathSounds.of(id).res, attrs, am.generateAudioSessionId())
+                ?: return
+            mp.setOnCompletionListener { it.release(); if (preview === it) preview = null }
+            preview = mp
+            mp.start()
+        } catch (e: Exception) {
+        }
     }
 
     private fun vibrateBreath() {

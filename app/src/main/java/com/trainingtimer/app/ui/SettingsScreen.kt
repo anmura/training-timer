@@ -31,6 +31,8 @@ import com.trainingtimer.app.data.BREATH_MAX
 import com.trainingtimer.app.data.BREATH_MIN
 import com.trainingtimer.app.data.AppData
 import com.trainingtimer.app.data.UiIcons
+import com.trainingtimer.app.data.BreathSounds
+import com.trainingtimer.app.workout.WorkoutEngine
 import com.trainingtimer.app.data.title
 import com.trainingtimer.app.reminders.ReminderScheduler
 import androidx.compose.foundation.clickable
@@ -149,7 +151,7 @@ fun SettingsScreen(data: AppData, onBack: () -> Unit, onReminders: () -> Unit, o
             )
             SwitchRow(
                 title = "Breathing reminders",
-                description = "During exercises an icon pops up with a soft sound and buzz: don't forget to breathe",
+                description = "During exercises the timer breathes with a soft sound and buzz: don't forget to breathe",
                 checked = settings.breathReminders,
                 onChange = { Repo.updateSettings(settings.copy(breathReminders = it)) },
             )
@@ -177,6 +179,10 @@ fun SettingsScreen(data: AppData, onBack: () -> Unit, onReminders: () -> Unit, o
                         minusLabel = "Shorter interval",
                         plusLabel = "Longer interval",
                     )
+                }
+                BreathSoundPicker(settings.breathSound) { id ->
+                    Repo.updateSettings(settings.copy(breathSound = id))
+                    WorkoutEngine.previewBreath(context, id)
                 }
             }
             Text(
@@ -262,5 +268,55 @@ private fun SwitchRow(title: String, description: String, checked: Boolean, onCh
                 uncheckedBorderColor = C.Faint,
             ),
         )
+    }
+}
+
+/** Choice of the breathing sound: tap a row to choose it and hear it. */
+@Composable
+private fun BreathSoundPicker(selected: String, onPick: (String) -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(C.Surface)
+            .padding(start = 16.dp, end = 10.dp, top = 12.dp, bottom = 8.dp),
+    ) {
+        Text("Sound", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = C.Text)
+        Text("Tap to choose and listen", fontSize = 13.sp, color = C.Muted)
+        Spacer(Modifier.size(6.dp))
+        for (snd in BreathSounds.all) {
+            val on = snd.id == selected
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 52.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (on) C.SkyTrack else C.Surface)
+                    .clickable(role = Role.RadioButton) { onPick(snd.id) }
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (on) C.Sky else C.Surface2),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    PathIcon(UiIcons.PLAY, if (on) C.Bg else C.Muted, size = 14.dp, filled = true)
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        snd.name + if (snd.id == BreathSounds.DEFAULT) " · default" else "",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (on) C.Sky else C.Text,
+                    )
+                    Text(snd.description, fontSize = 12.sp, color = C.Muted)
+                }
+                if (on) PathIcon(UiIcons.CHECK, C.Sky, size = 20.dp, strokeWidth = 2.6f)
+            }
+        }
     }
 }
